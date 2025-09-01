@@ -1,12 +1,5 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { GeistSans } from "geist/font/sans"
-import { GeistMono } from "geist/font/mono"
-import { Analytics } from "@vercel/analytics/next"
-import "./globals.css"
-import { Footer } from "@/components/layout/footer"
-import { Header } from "@/components/layout/header"
-import { Suspense } from "react"
 
 export const metadata: Metadata = {
   title: "v0 App",
@@ -19,13 +12,19 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  // Root layout now only provides HTML shell; public and admin segments define their own UI
   return (
     <html lang="en">
-      <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
+      <body>
+        {children}
+      </body>
+    </html>
+  )
+} ${GeistMono.variable}`}>
         <Suspense fallback={<div>Loading...</div>}>
-          <Header />
+          {!isAdminRoute && <Header />}
           <main>{children}</main>
-          <Footer />
+          {!isAdminRoute && <Footer />}
         </Suspense>
         <Analytics />
       </body>
