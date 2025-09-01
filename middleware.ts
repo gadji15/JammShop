@@ -2,6 +2,15 @@ import { updateSession } from "@/lib/supabase/middleware"
 import { NextResponse, type NextRequest } from "next/server"
 import { createServerClient } from "@supabase/ssr"
 
+// Central configuration for restricted admin sections
+const SUPER_ADMIN_ONLY_PREFIXES = [
+  "/admin/settings",
+  "/admin/users",
+  "/admin/analytics",
+  // Optional: uncomment if you want only super admins to manage external imports
+  // "/admin/external-imports",
+]
+
 export async function middleware(request: NextRequest) {
   // Always refresh session cookies first
   let response = await updateSession(request)
@@ -50,15 +59,17 @@ export async function middleware(request: NextRequest) {
     const isAdmin = profile?.role === "admin" || profile?.role === "super_admin"
     const isSuperAdmin = profile?.role === "super_admin"
 
-    // Restrict some sections to super_admin only
-    const superAdminOnly = ["/admin/settings", "/admin/users"]
-    const isSuperAdminSection = superAdminOnly.some((p) => pathname === p || pathname.startsWith(p + "/"))
-
+    // Admin access required for all /admin
     if (!isAdmin) {
       const redirect = NextResponse.redirect(new URL("/", request.url))
       redirect.cookies.setAll(response.cookies.getAll())
       return redirect
     }
+
+    // Restrict certain sections to super_admin only
+    const isSuperAdminSection = SUPER_ADMIN_ONLY_PREFIXES.some(
+      (p) => pathname === p || pathname.startsWith(p + "/"),
+    )
 
     if (isSuperAdminSection && !isSuperAdmin) {
       const redirect = NextResponse.redirect(new URL("/admin", request.url))
