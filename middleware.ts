@@ -7,8 +7,7 @@ const SUPER_ADMIN_ONLY_PREFIXES = [
   "/admin/settings",
   "/admin/users",
   "/admin/analytics",
-  // Optional: uncomment if you want only super admins to manage external imports
-  // "/admin/external-imports",
+  "/admin/external-imports",
 ]
 
 export async function middleware(request: NextRequest) {
