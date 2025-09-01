@@ -19,11 +19,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   useEffect(() => {
     const checkAuth = async () => {
       try {
+        console.log("[AdminLayout] Starting auth check")
         const {
           data: { user },
+          error: getUserError,
         } = await supabase.auth.getUser()
+        console.log("[AdminLayout] getUser() -> user:", user, "error:", getUserError)
 
         if (!user) {
+          console.warn("[AdminLayout] No user found from getUser(), opening auth modal for admin access.")
           openModal(
             "admin",
             "Accès administrateur requis",
@@ -33,9 +37,27 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           return
         }
 
-        const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single()
+        const { data: profile, error: profileError, status: profileStatus } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", user.id)
+          .single()
+
+        console.log(
+          "[AdminLayout] profiles.single() -> status:",
+          profileStatus,
+          "error:",
+          profileError,
+          "profile:",
+          profile,
+        )
 
         if (!profile || (profile.role !== "admin" && profile.role !== "super_admin")) {
+          console.warn(
+            "[AdminLayout] Access denied - profile missing or role invalid. role=",
+            profile?.role,
+            "expected one of: admin, super_admin",
+          )
           openModal(
             "admin",
             "Droits administrateur requis",
@@ -48,7 +70,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         setUser(user)
         setProfile(profile)
       } catch (error) {
-        console.error("Auth check failed:", error)
+        console.error("[AdminLayout] Auth check failed:", error)
         openModal("admin")
       } finally {
         setLoading(false)
