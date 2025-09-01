@@ -59,7 +59,9 @@ export default function AdminUsersPage() {
   }
 
   const toggleUserRole = async (userId: string, currentRole: string) => {
-    const newRole = currentRole === "admin" ? "user" : "admin"
+    // Respect des rôles du projet: 'customer', 'admin', 'super_admin'
+    // Cette action ne doit pas gérer super_admin (réservé via un autre flux)
+    const newRole = currentRole === "admin" ? "customer" : "admin"
 
     try {
       const { error } = await supabase.from("profiles").update({ role: newRole }).eq("id", userId)
