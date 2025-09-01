@@ -14,6 +14,12 @@ export const metadata: Metadata = {
   generator: "v0.app",
 }
 
+/**
+ * We avoid using dynamic APIs like headers() synchronously in a Server Component.
+ * Instead, we rely on route segment layouts to scope UI.
+ * The public header/footer are omitted automatically for /admin via app/admin/layout.tsx,
+ * so we always render them here for public routes only.
+ */
 export default function RootLayout({
   children,
 }: Readonly<{
