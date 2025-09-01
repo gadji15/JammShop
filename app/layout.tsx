@@ -7,6 +7,7 @@ import "./globals.css"
 import { Footer } from "@/components/layout/footer"
 import { Header } from "@/components/layout/header"
 import { Suspense } from "react"
+import { headers } from "next/headers"
 
 export const metadata: Metadata = {
   title: "v0 App",
@@ -19,13 +20,17 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const hdrs = headers()
+  const pathname = hdrs.get("x-invoke-path") || hdrs.get("next-url") || ""
+  const isAdminRoute = pathname.startsWith("/admin")
+
   return (
     <html lang="en">
       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
         <Suspense fallback={<div>Loading...</div>}>
-          <Header />
+          {!isAdminRoute && <Header />}
           <main>{children}</main>
-          <Footer />
+          {!isAdminRoute && <Footer />}
         </Suspense>
         <Analytics />
       </body>
