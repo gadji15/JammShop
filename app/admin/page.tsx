@@ -81,31 +81,27 @@ export default function AdminDashboard() {
     try {
       setLoading(true)
 
-      // Fetch products count and categories
       const { count: productsCount } = await supabase.from("products").select("*", { count: "exact", head: true })
 
-      // Fetch orders with detailed analysis
       const { data: orders, count: ordersCount } = await supabase
         .from("orders")
         .select("total_amount, status, created_at", { count: "exact" })
 
-      // Fetch users count
       const { count: usersCount } = await supabase.from("profiles").select("*", { count: "exact", head: true })
 
-      // Calculate metrics
       const totalRevenue = orders?.reduce((sum, order) => sum + (order.total_amount || 0), 0) || 0
 
-      // Generate monthly revenue data (mock data for demo)
-      const monthlyRevenue = [
-        { month: "Jan", revenue: totalRevenue * 0.1 },
-        { month: "Fév", revenue: totalRevenue * 0.15 },
-        { month: "Mar", revenue: totalRevenue * 0.12 },
-        { month: "Avr", revenue: totalRevenue * 0.18 },
-        { month: "Mai", revenue: totalRevenue * 0.22 },
-        { month: "Jun", revenue: totalRevenue * 0.23 },
-      ]
+      // Simple monthly buckets computed from actual orders
+      const months = ["Jan", "Fév", "Mar", "Avr", "Mai", "Jun", "Jul", "Aoû", "Sep", "Oct", "Nov", "Déc"]
+      const revenueBuckets = new Array(12).fill(0)
+      orders?.forEach((o) => {
+        const d = new Date(o.created_at)
+        revenueBuckets[d.getMonth()] += o.total_amount || 0
+      })
+      const currentMonth = new Date().getMonth()
+      const last6 = [...Array(6)].map((_, i) => (currentMonth - (5 - i) + 12) % 12)
+      const monthlyRevenue = last6.map((m) => ({ month: months[m], revenue: revenueBuckets[m] }))
 
-      // Orders by status
       const ordersByStatus = [
         { name: "En attente", value: orders?.filter((o) => o.status === "pending").length || 0, color: "#F59E0B" },
         { name: "Confirmé", value: orders?.filter((o) => o.status === "confirmed").length || 0, color: "#3B82F6" },
@@ -114,17 +110,17 @@ export default function AdminDashboard() {
         { name: "Annulé", value: orders?.filter((o) => o.status === "cancelled").length || 0, color: "#EF4444" },
       ]
 
-      // Fetch recent orders with user details
       const { data: recentOrders } = await supabase
         .from("orders")
-        .select(`
+        .select(
+          `
           *,
           profiles!orders_user_id_fkey (full_name, email)
-        `)
+        `,
+        )
         .order("created_at", { ascending: false })
         .limit(5)
 
-      // Fetch low stock products
       const { data: lowStockProducts } = await supabase
         .from("products")
         .select("*")
@@ -133,11 +129,10 @@ export default function AdminDashboard() {
         .order("stock_quantity", { ascending: true })
         .limit(5)
 
-      // Mock growth metrics (in real app, compare with previous period)
       const growthMetrics = {
-        revenueGrowth: 12.5,
-        ordersGrowth: 8.3,
-        usersGrowth: 15.7,
+        revenueGrowth: 0, // peut être calculé en comparant des périodes
+        ordersGrowth: 0,
+        usersGrowth: 0,
       }
 
       setStats({
@@ -248,7 +243,7 @@ export default function AdminDashboard() {
         </Card>
 
         <Card className="relative overflow-hidden">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row items_center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-gray-600">Total Utilisateurs</CardTitle>
             <div className="p-2 bg-purple-100 rounded-lg">
               <Users className="h-4 w-4 text-purple-600" />
@@ -283,7 +278,6 @@ export default function AdminDashboard() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Revenue Chart */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -306,7 +300,6 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
 
-        {/* Orders Status Chart */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -342,7 +335,7 @@ export default function AdminDashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
+          <CardHeader className="flex flex-row items-center justify_between">
             <CardTitle className="flex items-center gap-2">
               <ShoppingCart className="h-5 w-5 text-blue-600" />
               Commandes récentes
@@ -380,7 +373,6 @@ export default function AdminDashboard() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="font-semibold text-gray-900">{order.total_amount.toLocaleString()} FCFA</p>
                       <Badge className={getStatusColor(order.status)}>{order.status}</Badge>
                     </div>
                   </div>
@@ -404,7 +396,7 @@ export default function AdminDashboard() {
           <CardContent>
             {stats.lowStockProducts.length === 0 ? (
               <div className="text-center py-8">
-                <Package className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                <Package className="h-12 w-12 text-gray-300 mx_auto mb-4" />
                 <p className="text-gray-500">Tous les produits sont bien approvisionnés</p>
               </div>
             ) : (
@@ -470,11 +462,11 @@ export default function AdminDashboard() {
               className="p-6 h-auto flex-col items-start text-left hover:bg-green-50 hover:border-green-200 transition-all bg-transparent"
               onClick={() => router.push("/admin/orders")}
             >
-              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-3">
+              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify_center mb-3">
                 <ShoppingCart className="h-6 w-6 text-green-600" />
               </div>
               <h3 className="font-semibold text-gray-900">Gérer les commandes</h3>
-              <p className="text-sm text-gray-600 mt-1">Traiter et suivre les commandes</p>
+              <p className="text-sm text_gray-600 mt-1">Traiter et suivre les commandes</p>
             </Button>
 
             <Button

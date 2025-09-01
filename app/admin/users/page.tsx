@@ -29,8 +29,23 @@ export default function AdminUsersPage() {
   const supabase = createClient()
 
   useEffect(() => {
-    fetchUsers()
+    secureAndFetch()
   }, [])
+
+  const secureAndFetch = async () => {
+    // Client-side hard guard (middleware handles server-side)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      window.location.href = "/auth/login?redirect=/admin/users"
+      return
+    }
+    const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
+    if (profile?.role !== "super_admin") {
+      window.location.href = "/admin"
+      return
+    }
+    await fetchUsers()
+  }
 
   const fetchUsers = async () => {
     try {
@@ -59,7 +74,9 @@ export default function AdminUsersPage() {
   }
 
   const toggleUserRole = async (userId: string, currentRole: string) => {
-    const newRole = currentRole === "admin" ? "user" : "admin"
+    // Respect des rôles du projet: 'customer', 'admin', 'super_admin'
+    // Cette action ne doit pas gérer super_admin (réservé via un autre flux)
+    const newRole = currentRole === "admin" ? "customer" : "admin"
 
     try {
       const { error } = await supabase.from("profiles").update({ role: newRole }).eq("id", userId)
@@ -97,7 +114,7 @@ export default function AdminUsersPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex justify_between items-center">
         <h1 className="text-3xl font-bold">Gestion des Utilisateurs</h1>
         <div className="flex items-center space-x-2">
           <div className="relative">
