@@ -52,7 +52,7 @@ export default function AdminUsersPage() {
       // Fetch profiles without implicit join
       const { data: profiles, error: profilesError } = await supabase
         .from("profiles")
-        .select("id,email,full_name,phone,role,created_at,last_sign_in_at")
+        .select("id,email,full_name,role,created_at,last_sign_in_at")
         .order("created_at", { ascending: false })
 
       if (profilesError) throw profilesError
