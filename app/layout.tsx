@@ -7,7 +7,6 @@ import "./globals.css"
 import { Footer } from "@/components/layout/footer"
 import { Header } from "@/components/layout/header"
 import { Suspense } from "react"
-import { headers } from "next/headers"
 
 export const metadata: Metadata = {
   title: "v0 App",
@@ -20,18 +19,14 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
-  // Hide public Header/Footer on admin routes
-  const h = headers()
-  const pathname = h.get("x-next-pathname") || "" // Next sets this header; fallback to empty
-  const isAdminRoute = pathname.startsWith("/admin")
-
+  // Global public layout; admin has its own nested layout at app/admin/layout.tsx
   return (
     <html lang="en">
       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
         <Suspense fallback={<div>Loading...</div>}>
-          {!isAdminRoute && <Header />}
+          <Header />
           <main>{children}</main>
-          {!isAdminRoute && <Footer />}
+          <Footer />
         </Suspense>
         <Analytics />
       </body>
