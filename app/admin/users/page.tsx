@@ -49,19 +49,30 @@ export default function AdminUsersPage() {
 
   const fetchUsers = async () => {
     try {
-      const { data, error } = await supabase
+      // Fetch profiles without implicit join
+      const { data: profiles, error: profilesError } = await supabase
         .from("profiles")
-        .select(`
-          *,
-          orders(count)
-        `)
+        .select("id,email,full_name,phone,role,created_at,last_sign_in_at")
         .order("created_at", { ascending: false })
 
-      if (error) throw error
+      if (profilesError) throw profilesError
 
-      const usersWithOrderCount = data.map((user) => ({
-        ...user,
-        order_count: user.orders?.[0]?.count || 0,
+      // Fetch aggregated order counts by user_id
+      const { data: orderAgg, error: ordersError } = await supabase
+        .from("orders")
+        .select("user_id, count:id") // PostgREST: alias count on id
+        .group("user_id")
+
+      if (ordersError) throw ordersError
+
+      const countsMap = new Map<string, number>()
+      ;(orderAgg || []).forEach((row: any) => {
+        if (row.user_id) countsMap.set(row.user_id, Number(row.count) || 0)
+      })
+
+      const usersWithOrderCount = (profiles || []).map((u: any) => ({
+        ...u,
+        order_count: countsMap.get(u.id) ?? 0,
       }))
 
       setUsers(usersWithOrderCount)
@@ -100,7 +111,7 @@ export default function AdminUsersPage() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="flex justify-between items-center">
+        <div className="flex justify_between items-center">
           <h1 className="text-3xl font-bold">Gestion des Utilisateurs</h1>
         </div>
         <div className="animate-pulse space-y-4">
