@@ -18,9 +18,24 @@ import { toast } from "sonner"
 import { useAuthModal } from "@/lib/hooks/use-auth-modal"
 import { AuthModal } from "@/components/auth/auth-modal"
 
+type PaymentSettings = {
+  enableCOD: boolean
+  enableMobileMoney: boolean
+  enableOrangeMoney: boolean
+  enableWave: boolean
+  enableFreeMoney: boolean
+}
+
 export default function CheckoutPage() {
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(false)
+  const [paySettings, setPaySettings] = useState<PaymentSettings>({
+    enableCOD: true,
+    enableMobileMoney: true,
+    enableOrangeMoney: true,
+    enableWave: true,
+    enableFreeMoney: false,
+  })
   const { isOpen, reason, title, description, openModal, closeModal } = useAuthModal()
   const [formData, setFormData] = useState({
     full_name: "",
@@ -39,6 +54,7 @@ export default function CheckoutPage() {
   const supabase = createClient()
 
   useEffect(() => {
+    // Fetch user + profile defaults
     supabase.auth.getUser().then(({ data: { user } }) => {
       setUser(user)
       if (!user) {
@@ -67,6 +83,35 @@ export default function CheckoutPage() {
           })
       }
     })
+    // Fetch payment settings
+    supabase
+      .from("settings")
+      .select("key,value")
+      .in("key", ["enableCOD", "enableMobileMoney", "enableOrangeMoney", "enableWave", "enableFreeMoney"])
+      .then(({ data }) => {
+        if (!data) return
+        const map = Object.fromEntries(data.map((r: any) => [r.key, r.value]))
+        const s: PaymentSettings = {
+          enableCOD: map["enableCOD"] === "true",
+          enableMobileMoney: map["enableMobileMoney"] === "true",
+          enableOrangeMoney: map["enableOrangeMoney"] === "true",
+          enableWave: map["enableWave"] === "true",
+          enableFreeMoney: map["enableFreeMoney"] === "true",
+        }
+        setPaySettings(s)
+        // If current method disabled by settings, fallback to first enabled
+        const preferred = formData.payment_method
+        const allowed = [
+          s.enableCOD ? "cash_on_delivery" : null,
+          s.enableOrangeMoney ? "orange_money" : null,
+          s.enableWave ? "wave" : null,
+          s.enableFreeMoney ? "free_money" : null,
+        ].filter(Boolean) as string[]
+        if (!allowed.includes(preferred)) {
+          setFormData((p) => ({ ...p, payment_method: allowed[0] || "cash_on_delivery" }))
+        }
+      })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [supabase, openModal])
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -223,74 +268,81 @@ export default function CheckoutPage() {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
-                      <label className="flex items-center space-x-3 cursor-pointer p-4 border rounded-lg hover:bg-gray-50 transition-colors">
-                        <input
-                          type="radio"
-                          name="payment_method"
-                          value="cash_on_delivery"
-                          checked={formData.payment_method === "cash_on_delivery"}
-                          onChange={(e) => setFormData({ ...formData, payment_method: e.target.value })}
-                          className="text-blue-600"
-                        />
-                        <CreditCard className="h-5 w-5 text-green-600" />
-                        <div className="flex-1">
-                          <div className="font-medium">Paiement à la livraison</div>
-                          <div className="text-sm text-gray-500">Payez en espèces lors de la réception</div>
-                        </div>
-                      </label>
+                      {paySettings.enableCOD && (
+                        <label className="flex items-center space-x-3 cursor-pointer p-4 border rounded-lg hover:bg-gray-50 transition-colors">
+                          <input
+                            type="radio"
+                            name="payment_method"
+                            value="cash_on_delivery"
+                            checked={formData.payment_method === "cash_on_delivery"}
+                            onChange={(e) => setFormData({ ...formData, payment_method: e.target.value })}
+                            className="text-blue-600"
+                          />
+                          <CreditCard className="h-5 w-5 text-green-600" />
+                          <div className="flex-1">
+                            <div className="font-medium">Paiement à la livraison</div>
+                            <div className="text-sm text-gray-500">Payez en espèces lors de la réception</div>
+                          </div>
+                        </label>
+                      )}
 
-                      <label className="flex items-center space-x-3 cursor-pointer p-4 border rounded-lg hover:bg-gray-50 transition-colors">
-                        <input
-                          type="radio"
-                          name="payment_method"
-                          value="orange_money"
-                          checked={formData.payment_method === "orange_money"}
-                          onChange={(e) => setFormData({ ...formData, payment_method: e.target.value })}
-                          className="text-blue-600"
-                        />
-                        <Smartphone className="h-5 w-5 text-orange-600" />
-                        <div className="flex-1">
-                          <div className="font-medium">Orange Money</div>
-                          <div className="text-sm text-gray-500">Paiement mobile sécurisé avec Orange Money</div>
-                        </div>
-                      </label>
+                      {paySettings.enableOrangeMoney && (
+                        <label className="flex items-center space-x-3 cursor-pointer p-4 border rounded-lg hover:bg-gray-50 transition-colors">
+                          <input
+                            type="radio"
+                            name="payment_method"
+                            value="orange_money"
+                            checked={formData.payment_method === "orange_money"}
+                            onChange={(e) => setFormData({ ...formData, payment_method: e.target.value })}
+                            className="text-blue-600"
+                          />
+                          <Smartphone className="h-5 w-5 text-orange-600" />
+                          <div className="flex-1">
+                            <div className="font-medium">Orange Money</div>
+                            <div className="text-sm text-gray-500">Paiement mobile sécurisé avec Orange Money</div>
+                          </div>
+                        </label>
+                      )}
 
-                      <label className="flex items-center space-x-3 cursor-pointer p-4 border rounded-lg hover:bg-gray-50 transition-colors">
-                        <input
-                          type="radio"
-                          name="payment_method"
-                          value="wave"
-                          checked={formData.payment_method === "wave"}
-                          onChange={(e) => setFormData({ ...formData, payment_method: e.target.value })}
-                          className="text-blue-600"
-                        />
-                        <Wallet className="h-5 w-5 text-blue-600" />
-                        <div className="flex-1">
-                          <div className="font-medium">Wave</div>
-                          <div className="text-sm text-gray-500">Paiement rapide et sécurisé avec Wave</div>
-                        </div>
-                      </label>
+                      {paySettings.enableWave && (
+                        <label className="flex items-center space-x-3 cursor-pointer p-4 border rounded-lg hover:bg-gray-50 transition-colors">
+                          <input
+                            type="radio"
+                            name="payment_method"
+                            value="wave"
+                            checked={formData.payment_method === "wave"}
+                            onChange={(e) => setFormData({ ...formData, payment_method: e.target.value })}
+                            className="text-blue-600"
+                          />
+                          <Wallet className="h-5 w-5 text-blue-600" />
+                          <div className="flex-1">
+                            <div className="font-medium">Wave</div>
+                            <div className="text-sm text-gray-500">Paiement rapide et sécurisé avec Wave</div>
+                          </div>
+                        </label>
+                      )}
 
-                      <label className="flex items-center space-x-3 cursor-pointer p-4 border rounded-lg hover:bg-gray-50 transition-colors">
-                        <input
-                          type="radio"
-                          name="payment_method"
-                          value="free_money"
-                          checked={formData.payment_method === "free_money"}
-                          onChange={(e) => setFormData({ ...formData, payment_method: e.target.value })}
-                          className="text-blue-600"
-                        />
-                        <CreditCard className="h-5 w-5 text-red-600" />
-                        <div className="flex-1">
-                          <div className="font-medium">Free Money</div>
-                          <div className="text-sm text-gray-500">Paiement mobile avec Free Money</div>
-                        </div>
-                      </label>
+                      {paySettings.enableFreeMoney && (
+                        <label className="flex items-center space-x-3 cursor-pointer p-4 border rounded-lg hover:bg-gray-50 transition-colors">
+                          <input
+                            type="radio"
+                            name="payment_method"
+                            value="free_money"
+                            checked={formData.payment_method === "free_money"}
+                            onChange={(e) => setFormData({ ...formData, payment_method: e.target.value })}
+                            className="text-blue-600"
+                          />
+                          <CreditCard className="h-5 w-5 text-red-600" />
+                          <div className="flex-1">
+                            <div className="font-medium">Free Money</div>
+                            <div className="text-sm text-gray-500">Paiement mobile avec Free Money</div>
+                          </div>
+                        </label>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
 
-                {/* Notes */}
                 <Card>
                   <CardHeader>
                     <CardTitle>Notes de commande (optionnel)</CardTitle>
@@ -310,7 +362,6 @@ export default function CheckoutPage() {
               </form>
             </div>
 
-            {/* Order Summary */}
             <div>
               <Card className="sticky top-4">
                 <CardHeader>

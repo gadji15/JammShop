@@ -45,6 +45,18 @@ export default function SettingsPage() {
     const fetchSettings = async () => {
       try {
         setLoading(true)
+        // Hard guard client-side (middleware/guards handle server-side)
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+          window.location.href = "/auth/login?redirect=/admin/settings"
+          return
+        }
+        const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
+        if (profile?.role !== "super_admin") {
+          window.location.href = "/admin"
+          return
+        }
+
         // Table de configuration (key/value) côté Supabase
         const { data } = await supabase.from("settings").select("key,value")
         if (data && data.length) {
