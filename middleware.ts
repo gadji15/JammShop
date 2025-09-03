@@ -48,7 +48,10 @@ export async function middleware(request: NextRequest) {
       url.pathname = "/auth/login"
       url.searchParams.set("redirect", pathname)
       const redirect = NextResponse.redirect(url)
-      redirect.cookies.setAll(response.cookies.getAll())
+      // Copy cookies individually (setAll not available on NextResponse cookies)
+      for (const cookie of response.cookies.getAll()) {
+        redirect.cookies.set(cookie.name, cookie.value, cookie)
+      }
       return redirect
     }
 
@@ -61,7 +64,9 @@ export async function middleware(request: NextRequest) {
     // Admin access required for all /admin
     if (!isAdmin) {
       const redirect = NextResponse.redirect(new URL("/", request.url))
-      redirect.cookies.setAll(response.cookies.getAll())
+      for (const cookie of response.cookies.getAll()) {
+        redirect.cookies.set(cookie.name, cookie.value, cookie)
+      }
       return redirect
     }
 
@@ -72,7 +77,9 @@ export async function middleware(request: NextRequest) {
 
     if (isSuperAdminSection && !isSuperAdmin) {
       const redirect = NextResponse.redirect(new URL("/admin", request.url))
-      redirect.cookies.setAll(response.cookies.getAll())
+      for (const cookie of response.cookies.getAll()) {
+        redirect.cookies.set(cookie.name, cookie.value, cookie)
+      }
       return redirect
     }
   }
