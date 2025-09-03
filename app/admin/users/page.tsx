@@ -210,15 +210,15 @@ export default function AdminUsersPage() {
                   <TableCell>
                     <Badge variant={user.role === "admin" ? "default" : "secondary"}>
                       {user.role === "admin" ? (
-                        <>
+                        <span className="inline-flex items-center">
                           <ShieldCheck className="h-3 w-3 mr-1" />
-                          Admin
-                        </>
+                          <span>Admin</span>
+                        </span>
                       ) : (
-                        <>
+                        <span className="inline-flex items-center">
                           <Shield className="h-3 w-3 mr-1" />
-                          Utilisateur
-                        </>
+                          <span>Utilisateur</span>
+                        </span>
                       )}
                     </Badge>
                   </TableCell>
