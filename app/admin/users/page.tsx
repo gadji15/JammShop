@@ -58,17 +58,28 @@ export default function AdminUsersPage() {
       if (profilesError) throw profilesError
 
       // Fetch aggregated order counts by user_id
-      const { data: orderAgg, error: ordersError } = await supabase
-        .from("orders")
-        .select("user_id, count:id") // PostgREST: alias count on id
-        .group("user_id")
-
-      if (ordersError) throw ordersError
-
-      const countsMap = new Map<string, number>()
-      ;(orderAgg || []).forEach((row: any) => {
-        if (row.user_id) countsMap.set(row.user_id, Number(row.count) || 0)
-      })
+      // Supabase JS client doesn't expose `.group()` directly.
+      // Use RPC or a view instead. Here, use an RPC that groups in SQL.
+      let countsMap = new Map<string, number>()
+      try {
+        const { data: orderAgg, error: ordersError } = await supabase.rpc("get_order_counts_by_user")
+        if (ordersError) throw ordersError
+        ;(orderAgg || []).forEach((row: any) => {
+          if (row.user_id) countsMap.set(row.user_id, Number(row.count) || 0)
+        })
+      } catch (e) {
+        console.warn("[AdminUsersPage] RPC get_order_counts_by_user failed, falling back to client-side tally:", e)
+        // Fallback: fetch minimal orders and tally in JS (may be heavier on large datasets)
+        const { data: ordersFallback, error: ordersFallbackErr } = await supabase
+          .from("orders")
+          .select("user_id")
+        if (!ordersFallbackErr) {
+          (ordersFallback || []).forEach((row: any) => {
+            if (!row.user_id) return
+            countsMap.set(row.user_id, (countsMap.get(row.user_id) || 0) + 1)
+          })
+        }
+      }
 
       const usersWithOrderCount = (profiles || []).map((u: any) => ({
         ...u,
