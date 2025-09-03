@@ -67,6 +67,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           return
         }
 
+        // Update last_sign_in_at for the current admin user (app-level tracking)
+        try {
+          await supabase
+            .from("profiles")
+            .update({ last_sign_in_at: new Date().toISOString() })
+            .eq("id", user.id)
+        } catch (e) {
+          // Do not block UI if update fails
+          console.warn("[AdminLayout] Failed to update last_sign_in_at:", e)
+        }
+
         setUser(user)
         setProfile(profile)
       } catch (error) {
