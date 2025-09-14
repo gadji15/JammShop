@@ -29,64 +29,8 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 text-white overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-16 md:top-20 left-10 w-56 md:w-72 h-56 md:h-72 bg-white rounded-full mix-blend-multiply filter blur-xl animate-pulse"></div>
-          <div className="absolute top-32 md:top-40 right-10 w-56 md:w-72 h-56 md:h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl animate-pulse animation-delay-2000"></div>
-          <div className="absolute -bottom-8 left-20 w-56 md:w-72 h-56 md:h-72 bg-blue-300 rounded-full mix-blend-multiply filter blur-xl animate-pulse animation-delay-4000"></div>
-        </div>
-
-        <div className="relative container mx-auto px-4 py-16 md:py-20 lg:py-24">
-          <div className="max-w-4xl mx-auto text-center">
-            <div className="mb-4 md:mb-6">
-              <Badge className="bg-white/20 text-white border-white/30 mb-3 md:mb-4 animate-fade-in">
-                🎉 Nouveau sur JammShop
-              </Badge>
-            </div>
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-4 md:mb-6 text-balance animate-fade-in-up">
-              Votre <span className="text-yellow-300">marketplace</span> de confiance
-            </h1>
-            <p className="text-lg md:text-2xl mb-6 md:mb-8 text-blue-100 text-pretty animate-fade-in-up animation-delay-200">
-              Découvrez des milliers de produits de qualité provenant de fournisseurs du monde entier, directement
-              depuis le Sénégal
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center animate-fade-in-up animation-delay-400">
-              <Button
-                asChild
-                size="lg"
-                className="bg-white text-blue-600 hover:bg-gray-100 hover:scale-105 transition-all duration-300 shadow-lg"
-              >
-                <Link href="/products">
-                  Découvrir nos produits
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Link>
-              </Button>
-              <Button
-                asChild
-                variant="outline"
-                size="lg"
-                className="border-white text-white hover:bg-white hover:text-blue-600 bg-transparent hover:scale-105 transition-all duration-300"
-              >
-                <Link href="/auth/register">Devenir vendeur</Link>
-              </Button>
-            </div>
-
-            <div className="mt-8 md:mt-12 flex flex-wrap justify-center items-center gap-6 md:gap-8 text-blue-200 animate-fade-in-up animation-delay-600">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                <span className="text-xs md:text-sm">+10,000 produits</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                <span className="text-xs md:text-sm">Livraison Sénégal</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                <span className="text-xs md:text-sm">Paiement Mobile Money</span>
-              </div>
-            </div>
-          </div>
-        </div>
+      <section className="relative bg-black text-white">
+        <Hero />
       </section>
 
       {/* Categories Section */}
