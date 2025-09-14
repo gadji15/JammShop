@@ -15,12 +15,22 @@ export function Hero() {
   const searchParams = useSearchParams()
   const { categories } = useCategories()
   const [q, setQ] = useState("")
+  const [showSuggest, setShowSuggest] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
+
+  // simple tracking wrapper (Vercel Analytics if present)
+  const track = (event: string, props?: Record<string, any>) => {
+    try {
+      ;(window as any).va?.track?.(event, props)
+    } catch {}
+  }
 
   const onSearch = (e: React.FormEvent) => {
     e.preventDefault()
     const query = q.trim()
+    track("hero_search", { q_len: query.length, has_query: query.length > 0 })
     router.push(query ? `/products?query=${encodeURIComponent(query)}` : "/products")
+    setShowSuggest(false)
   }
 
   // External media placeholders (royalty-free)
@@ -43,6 +53,11 @@ export function Hero() {
     }
     return "hero1"
   }, [searchParams])
+
+  // fire view event
+  useEffect(() => {
+    track("hero_view", { variant })
+  }, [variant])
 
   // Video behavior: pause on hidden tab or reduced motion
   useEffect(() => {
@@ -74,22 +89,28 @@ export function Hero() {
   }, [])
 
   const headline =
-    variant === "hero2"
-      ? (
-          <>
-            Trouvez tout. <span className="text-yellow-300">Au meilleur prix.</span>
-          </>
-        )
-      : (
-          <>
-            Achetez malin. Vendez plus. <span className="text-yellow-300">Sans effort.</span>
-          </>
-        )
+    variant === "hero2" ? (
+      <>
+        Trouvez tout. <span className="text-yellow-300">Au meilleur prix.</span>
+      </>
+    ) : (
+      <>
+        Achetez malin. Vendez plus. <span className="text-yellow-300">Sans effort.</span>
+      </>
+    )
 
   const subline =
     variant === "hero2"
       ? "Comparez en un clin d’œil. Commandez en toute confiance. Livraison rapide partout."
       : "La marketplace de confiance pour découvrir, comparer et commander vos produits au meilleur prix."
+
+  // suggestions basées sur les catégories
+  const suggestions =
+    q.trim().length > 0
+      ? categories
+          .filter((c) => c.name.toLowerCase().includes(q.trim().toLowerCase()))
+          .slice(0, 6)
+      : []
 
   return (
     <section className="relative overflow-hidden">
@@ -126,18 +147,21 @@ export function Hero() {
             <span className="hidden md:inline text-white/80 text-sm">Des milliers d’articles en stock</span>
           </div>
 
-          <h1 className="text-white text-4xl md:text-6xl font-extrabold tracking-tight leading-tight">
-            {headline}
-          </h1>
+          <h1 className="text-white text-4xl md:text-6xl font-extrabold tracking-tight leading-tight">{headline}</h1>
           <p className="mt-3 md:mt-4 text-base md:text-xl text-white/85">{subline}</p>
 
-          {/* Search bar */}
+          {/* Search bar with suggestions */}
           <form onSubmit={onSearch} className="mt-5 md:mt-8 flex gap-2" aria-label="Recherche de produits">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/60" aria-hidden="true" />
               <Input
                 value={q}
-                onChange={(e) => setQ(e.target.value)}
+                onChange={(e) => {
+                  setQ(e.target.value)
+                  setShowSuggest(true)
+                }}
+                onFocus={() => setShowSuggest(true)}
+                onBlur={() => setTimeout(() => setShowSuggest(false), 120)}
                 placeholder="Rechercher un produit, une marque, une catégorie..."
                 className={cn(
                   "pl-9 pr-3 h-11 md:h-12",
@@ -146,25 +170,63 @@ export function Hero() {
                 )}
                 aria-label="Saisir votre recherche"
               />
+              {showSuggest && suggestions.length > 0 && (
+                <div className="absolute z-10 mt-1 w-full rounded-lg bg-white shadow-xl ring-1 ring-black/10 overflow-hidden">
+                  <ul className="max-h-64 overflow-auto">
+                    {suggestions.map((c) => (
+                      <li key={c.id}>
+                        <Link
+                          href={`/categories/${c.slug}`}
+                          onClick={() => {
+                            track("hero_suggest_click", { category: c.slug })
+                          }}
+                          className="block px-3 py-2 text-sm text-gray-800 hover:bg-gray-50"
+                        >
+                          {c.name}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
-            <Button type="submit" className="h-11 md:h-12 px-5 md:px-6 bg-blue-600 hover:bg-blue-700" aria-label="Lancer la recherche">
+            <Button
+              type="submit"
+              className="h-11 md:h-12 px-5 md:px-6 bg-blue-600 hover:bg-blue-700"
+              aria-label="Lancer la recherche"
+            >
               Rechercher
             </Button>
           </form>
 
           {/* Quick actions */}
           <div className="mt-4 md:mt-6 flex flex-wrap gap-2 items-center">
-            <Button asChild variant="secondary" className="bg-white text-blue-700 hover:bg-white/90">
+            <Button
+              asChild
+              variant="secondary"
+              className="bg-white text-blue-700 hover:bg-white/90"
+              onClick={() => track("hero_cta_products")}
+            >
               <Link href="/products">
                 Découvrir nos produits
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
-            <Button asChild variant="outline" className="text-white border-white/60 hover:bg-white hover:text-blue-700">
+            <Button
+              asChild
+              variant="outline"
+              className="text-white border-white/60 hover:bg-white hover:text-blue-700"
+              onClick={() => track("hero_cta_register")}
+            >
               <Link href="/auth/register">Devenir vendeur</Link>
             </Button>
             {/* Secondary CTA visible on md+ */}
-            <Button asChild variant="outline" className="hidden md:inline-flex text-white border-white/60 hover:bg-white hover:text-blue-700">
+            <Button
+              asChild
+              variant="outline"
+              className="hidden md:inline-flex text-white border-white/60 hover:bg-white hover:text-blue-700"
+              onClick={() => track("hero_cta_promos")}
+            >
               <Link href="/products?promo=1">
                 <Sparkles className="mr-2 h-4 w-4" />
                 Voir les promos
@@ -196,6 +258,7 @@ export function Hero() {
                   key={c.id}
                   href={`/categories/${c.slug}`}
                   className="text-xs md:text-sm text-white/90 bg-white/10 hover:bg-white/15 px-3 py-1.5 rounded-full border border-white/20 transition"
+                  onClick={() => track("hero_chip_click", { category: c.slug })}
                 >
                   {c.name}
                 </Link>
@@ -203,6 +266,7 @@ export function Hero() {
               <Link
                 href="/products"
                 className="text-xs md:text-sm text-blue-900 bg-yellow-300 hover:bg-yellow-400 px-3 py-1.5 rounded-full transition"
+                onClick={() => track("hero_chip_all")}
               >
                 Tout voir
               </Link>
