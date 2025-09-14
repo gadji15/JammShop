@@ -8,9 +8,10 @@ import { Card, CardContent } from "@/components/ui/card"
 import { useCategories } from "@/lib/hooks/use-categories"
 import { useShowcaseProducts } from "@/lib/hooks/use-showcase-products"
 import { Carousel, CarouselItem } from "@/components/ui/carousel"
+import { Hero } from "@/components/layout/hero"
 import { ArrowRight, Package, Shield, Truck } from "lucide-react"
 import Image from "next/image"
-import Link from "next/link"
+import Link from "next/l_codeinnewk</"
 
 export default function HomePage() {
   const { products: showcaseProducts, loading: showcaseLoading, filter, setFilter } = useShowcaseProducts("featured")
