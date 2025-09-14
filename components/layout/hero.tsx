@@ -285,17 +285,30 @@ export function Hero() {
                       <div className="py-2">
                         <div className="px-3 pb-1 text-xs font-semibold text-gray-500">Produits</div>
                         <ul>
-                          {suggestions.products.map((p: any) => (
-                            <li key={p.id}>
-                              <Link
-                                href={`/products/${p.slug}`}
-                                onClick={() => track("hero_suggest_click_product", { product: p.slug })}
-                                className="block px-3 py-2 text-sm text-gray-800 hover:bg-gray-50"
-                              >
-                                {p.name}
-                              </Link>
-                            </li>
-                          ))}
+                          {suggestions.products.map((p: any) => {
+                            const img =
+                              Array.isArray(p.images) && p.images.length > 0
+                                ? p.images[0]
+                                : "/placeholder.svg?height=80&width=80&text=IMG"
+                            const cat = p.categories?.name || ""
+                            return (
+                              <li key={p.id}>
+                                <Link
+                                  href={`/products/${p.slug}`}
+                                  onClick={() => track("hero_suggest_click_product", { product: p.slug })}
+                                  className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50"
+                                >
+                                  <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-md bg-gray-100">
+                                    <Image src={img} alt={p.name} fill className="object-cover" />
+                                  </div>
+                                  <div className="min-w-0">
+                                    <div className="text-sm text-gray-900 truncate">{p.name}</div>
+                                    {cat && <div className="text-xs text-gray-500 truncate">{cat}</div>}
+                                  </div>
+                                </Link>
+                              </li>
+                            )
+                          })}
                         </ul>
                       </div>
                     )}
