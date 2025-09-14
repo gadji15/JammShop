@@ -269,11 +269,7 @@ export default function HomePage() {
             
           </div>
 
-          {showcaseLoading ? (
-            <ProductGridSkeleton count={8} />
-          ) : (
-            <FeaturedProducts />
-          )}
+          <FeaturedProducts />
 
           <div className="text-center mt-12">
             <Button asChild size="lg" className="bg-blue-600 hover:bg-blue-700">
