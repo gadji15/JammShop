@@ -37,6 +37,23 @@ export async function POST(req: Request) {
 
 export async function GET(req: Request) {
   const supabase = await createClient()
+
+  // Admin guard: require authenticated user with admin/super_admin role
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+  const { data: profile, error: profileErr } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single()
+  if (profileErr || !profile || !["admin", "super_admin"].includes(profile.role)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+  }
+
   const { searchParams } = new URL(req.url)
   const page = Math.max(1, Number(searchParams.get("page") || "1"))
   const pageSize = Math.min(100, Math.max(1, Number(searchParams.get("pageSize") || "20")))
