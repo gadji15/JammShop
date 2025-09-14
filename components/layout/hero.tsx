@@ -153,6 +153,30 @@ export function Hero() {
     return { products: [], categories: local }
   }, [q, categories, serverResults])
 
+  // Debounced server fetch for suggestions
+  useEffect(() => {
+    if (!showSuggest) return
+    const value = q.trim()
+    if (value.length < 2) {
+      setServerResults({ products: [], categories: [] })
+      setLoadingSuggest(false)
+      return
+    }
+    setLoadingSuggest(true)
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/search?q=${encodeURIComponent(value)}&limit=6`, { cache: "no-store" })
+        const json = await res.json()
+        setServerResults({ products: json.products || [], categories: json.categories || [] })
+      } catch {
+        setServerResults({ products: [], categories: [] })
+      } finally {
+        setLoadingSuggest(false)
+      }
+    }, 250)
+    return () => clearTimeout(timer)
+  }, [q, showSuggest])
+
   return (
     <section className="relative overflow-hidden">
       {/* Background media */}
@@ -197,23 +221,12 @@ export function Hero() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/60" aria-hidden="true" />
               <Input
                 value={q}
-                onChange={async (e) => {
+                onChange={(e) => {
                   const value = e.target.value
                   setQ(value)
                   setShowSuggest(true)
                   if (value.trim().length === 0) {
                     setServerResults({ products: [], categories: [] })
-                    return
-                  }
-                  setLoadingSuggest(true)
-                  try {
-                    const res = await fetch(`/api/search?q=${encodeURIComponent(value)}&limit=6`, { cache: "no-store" })
-                    const json = await res.json()
-                    setServerResults({ products: json.products || [], categories: json.categories || [] })
-                  } catch {
-                    setServerResults({ products: [], categories: [] })
-                  } finally {
-                    setLoadingSuggest(false)
                   }
                 }}
                 onFocus={() => setShowSuggest(true)}
