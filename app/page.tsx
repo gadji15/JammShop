@@ -1,5 +1,6 @@
 "use client"
 
+import React, { useEffect, useState } from "react"
 import { ProductGrid } from "@/components/product/product-grid"
 import { ProductGridSkeleton } from "@/components/product/product-loading"
 import { Badge } from "@/components/ui/badge"
@@ -15,9 +16,9 @@ import Link from "next/link"
 
 function FeaturedProducts() {
   const { products: showcaseProducts, loading: showcaseLoading, filter, setFilter } = useShowcaseProducts("featured")
-  const [compact, setCompact] = React.useState(true)
+  const [compact, setCompact] = useState(true)
 
-  React.useEffect(() => {
+  useEffect(() => {
     try {
       const stored = localStorage.getItem("homeFeaturedView")
       if (stored === "comfortable") setCompact(false)
@@ -49,10 +50,39 @@ function FeaturedProducts() {
 
   return (
     <>
-      <div className="flex items-center justify-center gap-2 mb-4">
-        <Button variant={compact ? "secondary" : "outline"} size="sm" onClick={toggleView}>
-          {compact ? "Affichage compact" : "Affichage confortable"}
-        </Button>
+      <div className="flex flex-col items-center gap-3 mb-6">
+        <div className="flex items-center gap-2">
+          <Button
+            variant={filter === "new" ? undefined : "outline"}
+            size="sm"
+            className={filter === "new" ? "bg-blue-600 hover:bg-blue-700 text-white" : "bg-transparent"}
+            onClick={() => setFilter("new")}
+          >
+            Nouveautés
+          </Button>
+          <Button
+            variant={filter === "best" ? undefined : "outline"}
+            size="sm"
+            className={filter === "best" ? "bg-blue-600 hover:bg-blue-700 text-white" : "bg-transparent"}
+            onClick={() => setFilter("best")}
+          >
+            Meilleures ventes
+          </Button>
+          <Button
+            variant={filter === "featured" ? undefined : "outline"}
+            size="sm"
+            className={filter === "featured" ? "bg-blue-600 hover:bg-blue-700 text-white" : "bg-transparent"}
+            onClick={() => setFilter("featured")}
+          >
+            Tout voir
+            <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
+        </div>
+        <div className="flex items-center justify-center">
+          <Button variant={compact ? "secondary" : "outline"} size="sm" onClick={toggleView}>
+            {compact ? "Affichage compact" : "Affichage confortable"}
+          </Button>
+        </div>
       </div>
       <ProductGrid
         products={showcaseProducts}
