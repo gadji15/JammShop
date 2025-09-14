@@ -30,26 +30,26 @@ export default function HomePage() {
       {/* Hero Section */}
       <section className="relative bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 text-white overflow-hidden">
         <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-20 left-10 w-72 h-72 bg-white rounded-full mix-blend-multiply filter blur-xl animate-pulse"></div>
-          <div className="absolute top-40 right-10 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl animate-pulse animation-delay-2000"></div>
-          <div className="absolute -bottom-8 left-20 w-72 h-72 bg-blue-300 rounded-full mix-blend-multiply filter blur-xl animate-pulse animation-delay-4000"></div>
+          <div className="absolute top-16 md:top-20 left-10 w-56 md:w-72 h-56 md:h-72 bg-white rounded-full mix-blend-multiply filter blur-xl animate-pulse"></div>
+          <div className="absolute top-32 md:top-40 right-10 w-56 md:w-72 h-56 md:h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl animate-pulse animation-delay-2000"></div>
+          <div className="absolute -bottom-8 left-20 w-56 md:w-72 h-56 md:h-72 bg-blue-300 rounded-full mix-blend-multiply filter blur-xl animate-pulse animation-delay-4000"></div>
         </div>
 
-        <div className="relative container mx-auto px-4 py-24">
+        <div className="relative container mx-auto px-4 py-16 md:py-20 lg:py-24">
           <div className="max-w-4xl mx-auto text-center">
-            <div className="mb-6">
-              <Badge className="bg-white/20 text-white border-white/30 mb-4 animate-fade-in">
+            <div className="mb-4 md:mb-6">
+              <Badge className="bg-white/20 text-white border-white/30 mb-3 md:mb-4 animate-fade-in">
                 🎉 Nouveau sur JammShop
               </Badge>
             </div>
-            <h1 className="text-5xl md:text-7xl font-bold mb-6 text-balance animate-fade-in-up">
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-4 md:mb-6 text-balance animate-fade-in-up">
               Votre <span className="text-yellow-300">marketplace</span> de confiance
             </h1>
-            <p className="text-xl md:text-2xl mb-8 text-blue-100 text-pretty animate-fade-in-up animation-delay-200">
+            <p className="text-lg md:text-2xl mb-6 md:mb-8 text-blue-100 text-pretty animate-fade-in-up animation-delay-200">
               Découvrez des milliers de produits de qualité provenant de fournisseurs du monde entier, directement
               depuis le Sénégal
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in-up animation-delay-400">
+            <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center animate-fade-in-up animation-delay-400">
               <Button
                 asChild
                 size="lg"
@@ -70,18 +70,18 @@ export default function HomePage() {
               </Button>
             </div>
 
-            <div className="mt-12 flex flex-wrap justify-center items-center gap-8 text-blue-200 animate-fade-in-up animation-delay-600">
+            <div className="mt-8 md:mt-12 flex flex-wrap justify-center items-center gap-6 md:gap-8 text-blue-200 animate-fade-in-up animation-delay-600">
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                <span className="text-sm">+10,000 produits</span>
+                <span className="text-xs md:text-sm">+10,000 produits</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                <span className="text-sm">Livraison Sénégal</span>
+                <span className="text-xs md:text-sm">Livraison Sénégal</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                <span className="text-sm">Paiement Mobile Money</span>
+                <span className="text-xs md:text-sm">Paiement Mobile Money</span>
               </div>
             </div>
           </div>
@@ -89,28 +89,28 @@ export default function HomePage() {
       </section>
 
       {/* Categories Section */}
-      <section className="py-20 bg-gradient-to-b from-white to-gray-50">
+      <section className="py-14 md:py-20 bg-gradient-to-b from-white to-gray-50">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <Badge className="bg-blue-100 text-blue-800 mb-4">Catégories populaires</Badge>
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6 text-balance">
+          <div className="text-center mb-10 md:mb-16">
+            <Badge className="bg-blue-100 text-blue-800 mb-3 md:mb-4">Catégories populaires</Badge>
+            <h2 className="text-3xl md:text-5xl font-bold text-gray-900 mb-4 md:mb-6 text-balance">
               Explorez nos <span className="text-blue-600">catégories</span>
             </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto text-pretty">
+            <p className="text-base md:text-xl text-gray-600 max-w-3xl mx-auto text-pretty">
               Trouvez exactement ce que vous cherchez dans nos différentes catégories de produits soigneusement
               sélectionnées
             </p>
           </div>
 
           {categoriesLoading ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
               {[...Array(10)].map((_, i) => (
                 <div key={i} className="aspect-square bg-gray-200 rounded-xl animate-pulse" />
               ))}
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 mb-8">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6 mb-6 md:mb-8">
                 {categories.slice(0, 10).map((category, index) => (
                   <Link
                     key={category.id}
@@ -127,12 +127,12 @@ export default function HomePage() {
                           className="object-cover transition-transform duration-500 group-hover:scale-110"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent group-hover:from-black/70 transition-all duration-300" />
-                        <div className="absolute inset-0 flex items-end p-4">
+                        <div className="absolute inset-0 flex items-end p-3 md:p-4">
                           <div className="text-white">
-                            <h3 className="font-bold text-lg mb-1 group-hover:text-yellow-300 transition-colors">
+                            <h3 className="font-bold text-base md:text-lg mb-0.5 md:mb-1 group-hover:text-yellow-300 transition-colors">
                               {category.name}
                             </h3>
-                            <p className="text-sm text-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                            <p className="text-xs md:text-sm text-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                               Découvrir →
                             </p>
                           </div>
@@ -147,7 +147,7 @@ export default function HomePage() {
                 <Button
                   asChild
                   variant="outline"
-                  size="lg"
+                  size="sm md:lg"
                   className="hover:scale-105 transition-all duration-300 shadow-lg bg-transparent"
                 >
                   <Link href="/products">
