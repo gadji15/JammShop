@@ -427,6 +427,8 @@ export default function AdminAnalyticsEventsPage() {
                   setIpFilter("")
                   setCustomStart("")
                   setCustomEnd("")
+                  setMultiNamesText("")
+                  setNamesMulti([])
                   setPeriod("7")
                   setPage(1)
                   fetchEvents({ page: 1 })
