@@ -58,17 +58,20 @@ export function ProductCard({ product, onAddToCart, onToggleWishlist }: ProductC
         {/* Badges */}
         <div className="absolute top-2 left-2 flex flex-col gap-1">
           {product.is_featured && (
-            <Badge variant="secondary" className="bg-blue-600 text-white">
+            <Badge variant="secondary" className="bg-blue-600 text-white text-[10px] md:text-xs px-1.5 py-0.5">
               Vedette
             </Badge>
           )}
           {discountPercentage > 0 && (
-            <Badge variant="destructive" className="bg-red-600 text-white">
+            <Badge variant="destructive" className="bg-red-600 text-white text-[10px] md:text-xs px-1.5 py-0.5">
               -{discountPercentage}%
             </Badge>
           )}
           {product.stock_quantity <= product.low_stock_threshold && (
-            <Badge variant="outline" className="bg-orange-100 text-orange-800 border-orange-300">
+            <Badge
+              variant="outline"
+              className="bg-orange-100 text-orange-800 border-orange-300 text-[10px] md:text-xs px-1.5 py-0.5"
+            >
               Stock faible
             </Badge>
           )}
@@ -78,10 +81,10 @@ export function ProductCard({ product, onAddToCart, onToggleWishlist }: ProductC
         <Button
           variant="ghost"
           size="icon"
-          className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-white/80 hover:bg-white"
+          className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-white/80 hover:bg-white h-7 w-7 md:h-8 md:w-8"
           onClick={handleToggleWishlist}
         >
-          <Heart className={`h-4 w-4 ${isWishlisted ? "fill-red-500 text-red-500" : "text-gray-600"}`} />
+          <Heart className={`h-3.5 w-3.5 md:h-4 md:w-4 ${isWishlisted ? "fill-red-500 text-red-500" : "text-gray-600"}`} />
         </Button>
 
         {/* Quick add to cart */}
@@ -92,53 +95,53 @@ export function ProductCard({ product, onAddToCart, onToggleWishlist }: ProductC
             className="w-full bg-blue-600 hover:bg-blue-700 text-white"
             size="sm"
           >
-            <ShoppingCart className="h-4 w-4 mr-2" />
+            <ShoppingCart className="h-3.5 w-3.5 md:h-4 md:w-4 mr-2" />
             {isLoading ? "Ajout..." : product.stock_quantity === 0 ? "Rupture" : "Ajouter"}
           </Button>
         </div>
       </div>
 
-      <CardContent className="p-4">
-        <div className="space-y-2">
+      <CardContent className="p-3 md:p-4">
+        <div className="space-y-1.5 md:space-y-2">
           {product.categories && (
             <Link
               href={`/categories/${product.categories.slug}`}
-              className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+              className="text-[11px] md:text-xs text-blue-600 hover:text-blue-800 font-medium"
             >
               {product.categories.name}
             </Link>
           )}
 
           <Link href={`/products/${product.slug}`}>
-            <h3 className="font-semibold text-gray-900 line-clamp-2 hover:text-blue-600 transition-colors">
+            <h3 className="font-semibold text-gray-900 text-sm md:text-base line-clamp-2 hover:text-blue-600 transition-colors">
               {product.name}
             </h3>
           </Link>
 
           {product.short_description && (
-            <p className="text-sm text-gray-600 line-clamp-2">{product.short_description}</p>
+            <p className="text-xs md:text-sm text-gray-600 line-clamp-2">{product.short_description}</p>
           )}
 
           {/* Rating placeholder */}
           <div className="flex items-center gap-1">
             {[...Array(5)].map((_, i) => (
-              <Star key={i} className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+              <Star key={i} className="h-3 w-3 md:h-3.5 md:w-3.5 fill-yellow-400 text-yellow-400" />
             ))}
-            <span className="text-xs text-gray-500 ml-1">(4.5)</span>
+            <span className="text-[10px] md:text-xs text-gray-500 ml-1">(4.5)</span>
           </div>
         </div>
       </CardContent>
 
-      <CardFooter className="p-4 pt-0">
+      <CardFooter className="p-3 md:p-4 pt-0">
         <div className="flex items-center justify-between w-full">
           <div className="flex items-center gap-2">
-            <span className="text-lg font-bold text-gray-900">{product.price.toFixed(2)} €</span>
+            <span className="text-base md:text-lg font-bold text-gray-900">{product.price.toFixed(2)} €</span>
             {product.compare_price && (
-              <span className="text-sm text-gray-500 line-through">{product.compare_price.toFixed(2)} €</span>
+              <span className="text-xs md:text-sm text-gray-500 line-through">{product.compare_price.toFixed(2)} €</span>
             )}
           </div>
 
-          <div className="text-xs text-gray-500">Stock: {product.stock_quantity}</div>
+          <div className="text-[10px] md:text-xs text-gray-500">Stock: {product.stock_quantity}</div>
         </div>
       </CardFooter>
     </Card>

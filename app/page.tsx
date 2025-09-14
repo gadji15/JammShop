@@ -110,7 +110,42 @@ export default function HomePage() {
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6 mb-6 md:mb-8">
+              {/* Mobile: horizontal scroll to réduire la hauteur */}
+              <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-2 -mx-4 px-4 md:hidden mb-6">
+                {categories.slice(0, 10).map((category, index) => (
+                  <Link
+                    key={category.id}
+                    href={`/categories/${category.slug}`}
+                    className="min-w-[180px] snap-start group block animate-fade-in-up"
+                    style={{ animationDelay: `${index * 100}ms` }}
+                  >
+                    <Card className="overflow-hidden transition-all duration-500 hover:shadow-2xl group-hover:scale-105 border-0 shadow-lg">
+                      <div className="aspect-square relative">
+                        <Image
+                          src={category.image_url || `/placeholder.svg`}
+                          alt={category.name}
+                          fill
+                          className="object-cover transition-transform duration-500 group-hover:scale-110"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent group-hover:from-black/70 transition-all duration-300" />
+                        <div className="absolute inset-0 flex items-end p-3">
+                          <div className="text-white">
+                            <h3 className="font-bold text-base mb-0.5 group-hover:text-yellow-300 transition-colors">
+                              {category.name}
+                            </h3>
+                            <p className="text-xs text-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                              Découvrir →
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </Card>
+                  </Link>
+                ))}
+              </div>
+
+              {/* Desktop/Tablet: grille classique */}
+              <div className="hidden md:grid grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 mb-8">
                 {categories.slice(0, 10).map((category, index) => (
                   <Link
                     key={category.id}
@@ -127,12 +162,12 @@ export default function HomePage() {
                           className="object-cover transition-transform duration-500 group-hover:scale-110"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent group-hover:from-black/70 transition-all duration-300" />
-                        <div className="absolute inset-0 flex items-end p-3 md:p-4">
+                        <div className="absolute inset-0 flex items-end p-4">
                           <div className="text-white">
-                            <h3 className="font-bold text-base md:text-lg mb-0.5 md:mb-1 group-hover:text-yellow-300 transition-colors">
+                            <h3 className="font-bold text-lg mb-1 group-hover:text-yellow-300 transition-colors">
                               {category.name}
                             </h3>
-                            <p className="text-xs md:text-sm text-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                            <p className="text-sm text-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                               Découvrir →
                             </p>
                           </div>
@@ -233,9 +268,43 @@ export default function HomePage() {
       </section>
 
       {/* Features Section */}
-      <section className="py-16 bg-gray-50">
+      <section className="py-12 md:py-16 bg-gray-50">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {/* Mobile: horizontal scroll to limit height */}
+          <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-2 -mx-4 px-4 md:hidden">
+            <Card className="min-w-[220px] snap-start text-center border-0 shadow-lg">
+              <CardContent className="p-6">
+                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <Truck className="h-7 w-7 text-blue-600" />
+                </div>
+                <h3 className="text-lg font-semibold mb-1.5">Livraison rapide</h3>
+                <p className="text-gray-600 text-sm">Livraison gratuite dès 50€ d'achat partout en France</p>
+              </CardContent>
+            </Card>
+
+            <Card className="min-w-[220px] snap-start text-center border-0 shadow-lg">
+              <CardContent className="p-6">
+                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <Shield className="h-7 w-7 text-green-600" />
+                </div>
+                <h3 className="text-lg font-semibold mb-1.5">Paiement sécurisé</h3>
+                <p className="text-gray-600 text-sm">Vos transactions sont protégées par un cryptage SSL</p>
+              </CardContent>
+            </Card>
+
+            <Card className="min-w-[220px] snap-start text-center border-0 shadow-lg">
+              <CardContent className="p-6">
+                <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <Package className="h-7 w-7 text-purple-600" />
+                </div>
+                <h3 className="text-lg font-semibold mb-1.5">Retour gratuit</h3>
+                <p className="text-gray-600 text-sm">30 jours pour changer d'avis, retour gratuit</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Tablets/Desktop: grid */}
+          <div className="hidden md:grid grid-cols-3 gap-6 lg:gap-8">
             <Card className="text-center border-0 shadow-lg">
               <CardContent className="p-8">
                 <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
