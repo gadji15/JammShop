@@ -21,6 +21,14 @@ export function Hero() {
     router.push(query ? `/products?query=${encodeURIComponent(query)}` : "/products")
   }
 
+  // External media placeholders (royalty-free)
+  const videoSrc =
+    "https://cdn.coverr.co/videos/coverr-online-shopping-1556/1080p.mp4"
+  const posterSrc =
+    "https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=1600&auto=format&fit=crop"
+  const mobileBg =
+    "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?q=80&w=1200&auto=format&fit=crop"
+
   return (
     <section className="relative overflow-hidden">
       {/* Background media */}
@@ -32,15 +40,17 @@ export function Hero() {
           muted
           loop
           playsInline
-          poster="/hero/poster.jpg"
+          poster={posterSrc}
         >
-          {/* Replace with your CDN video for production */}
-          <source src="/hero/cover.mp4" type="video/mp4" />
+          <source src={videoSrc} type="video/mp4" />
         </video>
         {/* Mobile image fallback */}
-        <div className="md:hidden h-full w-full bg-[url('/hero/mobile.jpg')] bg-cover bg-center" />
+        <div
+          className="md:hidden h-full w-full bg-cover bg-center"
+          style={{ backgroundImage: `url(${mobileBg})` }}
+        />
         {/* Gradient scrim */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/40 to-black/60" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/45 to-black/65" />
         {/* Accent glow */}
         <div className="pointer-events-none absolute -bottom-24 left-1/2 h-72 w-[90%] -translate-x-1/2 rounded-full bg-blue-500/20 blur-3xl" />
       </div>
