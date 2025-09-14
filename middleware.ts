@@ -14,11 +14,18 @@ export async function middleware(request: NextRequest) {
   // Always refresh session cookies first
   let response = await updateSession(request)
 
-  // A/B cookie for Hero: set once if missing (deterministic on first visit per user)
-  const ab = request.cookies.get("ab_variant")?.value
-  if (!ab || (ab !== "hero1" && ab !== "hero2")) {
-    const picked = Math.random() < 0.5 ? "hero1" : "hero2"
-    // ensure we have a response instance to set cookies on
+  // A/B cookie for Hero: set/override from URL (?ab=hero1|hero2) or once if missing
+  const abParam = request.nextUrl.searchParams.get("ab")
+  const abCookie = request.cookies.get("ab_variant")?.value
+  let picked = abCookie
+
+  if (abParam === "hero1" || abParam === "hero2") {
+    picked = abParam
+  } else if (!abCookie || (abCookie !== "hero1" && abCookie !== "hero2")) {
+    picked = Math.random() &lt; 0.5 ? "hero1" : "hero2"
+  }
+
+  if (picked && picked !== abCookie) {
     response = response ?? NextResponse.next({ request })
     response.cookies.set("ab_variant", picked, {
       path: "/",
