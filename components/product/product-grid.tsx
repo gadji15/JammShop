@@ -27,7 +27,7 @@ export function ProductGrid({ products, onAddToCart, onToggleWishlist, compact =
       <div className="md:hidden -mx-4 px-4">
         <Carousel options={{ align: "start", dragFree: true, loop: false }}>
           {products.map((product) => (
-            <CarouselItem key={product.id} className="min-w-[200px]">
+            <CarouselItem key={product.id} className={compact ? "min-w-[170px]" : "min-w-[200px]"}>
               <ProductCard
                 product={product}
                 onAddToCart={onAddToCart}
@@ -40,7 +40,13 @@ export function ProductGrid({ products, onAddToCart, onToggleWishlist, compact =
       </div>
 
       {/* Desktop and tablets: grid */}
-      <div className="hidden md:grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 lg:gap-6">
+      <div
+        className={
+          compact
+            ? "hidden md:grid grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 lg:gap-5"
+            : "hidden md:grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 lg:gap-6"
+        }
+      >
         {products.map((product) => (
           <ProductCard
             key={product.id}
