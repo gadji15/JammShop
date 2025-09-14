@@ -1,6 +1,7 @@
 "use client"
 
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useMemo, useState } from "react"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { ProductGrid } from "@/components/product/product-grid"
 import { ProductGridSkeleton } from "@/components/product/product-loading"
 import { Badge } from "@/components/ui/badge"
@@ -17,7 +18,20 @@ function FeaturedProducts() {
   const { products: showcaseProducts, loading: showcaseLoading, filter, setFilter } = useShowcaseProducts("featured")
   const [compact, setCompact] = useState(true)
 
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+
+  // Read view from URL first, then localStorage
   useEffect(() => {
+    const fromUrl = (searchParams?.get("featuredView") || "").toLowerCase()
+    if (fromUrl === "compact" || fromUrl === "comfortable") {
+      setCompact(fromUrl !== "comfortable")
+      try {
+        localStorage.setItem("homeFeaturedView", fromUrl)
+      } catch {}
+      return
+    }
     try {
       const stored = localStorage.getItem("homeFeaturedView")
       if (stored === "comfortable") setCompact(false)
@@ -25,14 +39,28 @@ function FeaturedProducts() {
     } catch {
       setCompact(true)
     }
-  }, [])
+  }, [searchParams])
+
+  const buildUrl = useMemo(() => {
+    return (nextView: "compact" | "comfortable") => {
+      const sp = new URLSearchParams(searchParams?.toString() || "")
+      if (nextView === "compact") {
+        sp.set("featuredView", "compact")
+      } else {
+        sp.set("featuredView", "comfortable")
+      }
+      return `${pathname}?${sp.toString()}`
+    }
+  }, [searchParams, pathname])
 
   const toggleView = () => {
     const next = !compact
     setCompact(next)
+    const view = next ? "compact" : "comfortable"
     try {
-      localStorage.setItem("homeFeaturedView", next ? "compact" : "comfortable")
+      localStorage.setItem("homeFeaturedView", view)
     } catch {}
+    router.replace(buildUrl(view), { scroll: false })
   }
 
   const handleAddToCart = async (productId: string) => {
@@ -59,6 +87,8 @@ function FeaturedProducts() {
           >
             Nouveautés
           </Button>
+        </div>
+        <div className="flex items-center gap-2">
           <Button
             variant={filter === "best" ? undefined : "outline"}
             size="sm"
