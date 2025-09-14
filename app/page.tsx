@@ -88,44 +88,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="py-16 bg-gray-50">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <Card className="text-center border-0 shadow-lg">
-              <CardContent className="p-8">
-                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Truck className="h-8 w-8 text-blue-600" />
-                </div>
-                <h3 className="text-xl font-semibold mb-2">Livraison rapide</h3>
-                <p className="text-gray-600">Livraison gratuite dès 50€ d'achat partout en France</p>
-              </CardContent>
-            </Card>
-
-            <Card className="text-center border-0 shadow-lg">
-              <CardContent className="p-8">
-                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Shield className="h-8 w-8 text-green-600" />
-                </div>
-                <h3 className="text-xl font-semibold mb-2">Paiement sécurisé</h3>
-                <p className="text-gray-600">Vos transactions sont protégées par un cryptage SSL</p>
-              </CardContent>
-            </Card>
-
-            <Card className="text-center border-0 shadow-lg">
-              <CardContent className="p-8">
-                <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Package className="h-8 w-8 text-purple-600" />
-                </div>
-                <h3 className="text-xl font-semibold mb-2">Retour gratuit</h3>
-                <p className="text-gray-600">30 jours pour changer d'avis, retour gratuit</p>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
-
-      {/* Categories Section */}
+      {/* Categories Section (moved above features) */}
       <section className="py-20 bg-gradient-to-b from-white to-gray-50">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
@@ -195,6 +158,43 @@ export default function HomePage() {
               </div>
             </>
           )}
+        </div>
+      </section>
+
+      {/* Features Section (moved below categories) */}
+      <section className="py-16 bg-gray-50">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <Card className="text-center border-0 shadow-lg">
+              <CardContent className="p-8">
+                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Truck className="h-8 w-8 text-blue-600" />
+                </div>
+                <h3 className="text-xl font-semibold mb-2">Livraison rapide</h3>
+                <p className="text-gray-600">Livraison gratuite dès 50€ d'achat partout en France</p>
+              </CardContent>
+            </Card>
+
+            <Card className="text-center border-0 shadow-lg">
+              <CardContent className="p-8">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Shield className="h-8 w-8 text-green-600" />
+                </div>
+                <h3 className="text-xl font-semibold mb-2">Paiement sécurisé</h3>
+                <p className="text-gray-600">Vos transactions sont protégées par un cryptage SSL</p>
+              </CardContent>
+            </Card>
+
+            <Card className="text-center border-0 shadow-lg">
+              <CardContent className="p-8">
+                <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Package className="h-8 w-8 text-purple-600" />
+                </div>
+                <h3 className="text-xl font-semibold mb-2">Retour gratuit</h3>
+                <p className="text-gray-600">30 jours pour changer d'avis, retour gratuit</p>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </section>
 
