@@ -47,21 +47,21 @@ export function ProductCard({ product, onAddToCart, onToggleWishlist, compact = 
   const badgeTextSize = compact ? "text-[9px] md:text-[10px]" : "text-[10px] md:text-xs"
   const wishBtnSize = compact ? "h-6 w-6 md:h-7 md:w-7" : "h-7 w-7 md:h-8 md:w-8"
   const wishIconSize = compact ? "h-3 w-3 md:h-3.5 md:w-3.5" : "h-3.5 w-3.5 md:h-4 md:w-4"
-  const contentPadding = compact ? "p-2.5 md:p-3" : "p-3 md:p-4"
-  const spaceY = compact ? "space-y-1 md:space-y-1.5" : "space-y-1.5 md:space-y-2"
+  const contentPadding = compact ? "p-2 md:p-2.5" : "p-3 md:p-4"
+  const spaceY = compact ? "space-y-1" : "space-y-1.5 md:space-y-2"
   const categoryText = compact ? "text-[10px] md:text-[11px]" : "text-[11px] md:text-xs"
   const titleText = compact ? "text-xs md:text-sm" : "text-sm md:text-base"
-  const descText = compact ? "text-[11px] md:text-xs" : "text-xs md:text-sm"
+  const descText = compact ? "text-[10px]" : "text-xs md:text-sm"
   const starSize = compact ? "h-2.5 w-2.5 md:h-3 md:w-3" : "h-3 w-3 md:h-3.5 md:w-3.5"
   const ratingText = compact ? "text-[9px] md:text-[10px]" : "text-[10px] md:text-xs"
-  const footerPadding = compact ? "p-2.5 md:p-3" : "p-3 md:p-4"
+  const footerPadding = compact ? "p-2 md:p-2.5" : "p-3 md:p-4"
   const priceText = compact ? "text-sm md:text-base" : "text-base md:text-lg"
-  const comparePriceText = compact ? "text-[11px] md:text-xs" : "text-xs md:text-sm"
+  const comparePriceText = compact ? "text-[10px] md:text-xs" : "text-xs md:text-sm"
   const stockText = compact ? "text-[9px] md:text-[10px]" : "text-[10px] md:text-xs"
 
   return (
-    <Card className="group overflow-hidden transition-all duration-300 hover:shadow-lg">
-      <div className="relative aspect-square overflow-hidden">
+    <Card className="group overflow-hidden transition-all duration-300 hover:shadow-md">
+      <div className={`relative ${compact ? "aspect-[4/5]" : "aspect-square"} overflow-hidden`}>
         <Link href={`/products/${product.slug}`}>
           <Image
             src={product.images[0] || "/placeholder.svg?height=300&width=300&query=product"}
@@ -134,17 +134,19 @@ export function ProductCard({ product, onAddToCart, onToggleWishlist, compact = 
             </h3>
           </Link>
 
-          {product.short_description && (
+          {!compact && product.short_description && (
             <p className={`${descText} text-gray-600 line-clamp-2`}>{product.short_description}</p>
           )}
 
-          {/* Rating placeholder */}
-          <div className="flex items-center gap-1">
-            {[...Array(5)].map((_, i) => (
-              <Star key={i} className={`${starSize} fill-yellow-400 text-yellow-400`} />
-            ))}
-            <span className={`${ratingText} text-gray-500 ml-1`}>(4.5)</span>
-          </div>
+          {/* Rating placeholder (hidden on compact to save height) */}
+          {!compact && (
+            <div className="flex items-center gap-1">
+              {[...Array(5)].map((_, i) => (
+                <Star key={i} className={`${starSize} fill-yellow-400 text-yellow-400`} />
+              ))}
+              <span className={`${ratingText} text-gray-500 ml-1`}>(4.5)</span>
+            </div>
+          )}
         </div>
       </CardContent>
 
