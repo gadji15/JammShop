@@ -199,7 +199,8 @@ export default function ProductsPage() {
     try {
       localStorage.setItem("productsView", nextCompact ? "compact" : "comfortable")
     } catch {}
-    router.push(buildUrl({ view: nextCompact ? "compact" : "
+    router.push(buildUrl({ view: nextCompact ? "compact" : "comfortable" }))
+  }
 
   const clearAll = () => {
     const cleared: ProductFiltersType = {
