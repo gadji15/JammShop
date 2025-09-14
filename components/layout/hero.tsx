@@ -16,6 +16,8 @@ export function Hero() {
   const { categories } = useCategories()
   const [q, setQ] = useState("")
   const [showSuggest, setShowSuggest] = useState(false)
+  const [serverResults, setServerResults] = useState<{ products: any[]; categories: any[] }>({ products: [], categories: [] })
+  const [loadingSuggest, setLoadingSuggest] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
 
   // simple tracking wrapper (Vercel Analytics if present)
@@ -104,13 +106,20 @@ export function Hero() {
       ? "Comparez en un clin d’œil. Commandez en toute confiance. Livraison rapide partout."
       : "La marketplace de confiance pour découvrir, comparer et commander vos produits au meilleur prix."
 
-  // suggestions basées sur les catégories
-  const suggestions =
-    q.trim().length > 0
-      ? categories
-          .filter((c) => c.name.toLowerCase().includes(q.trim().toLowerCase()))
-          .slice(0, 6)
-      : []
+  // suggestions basées sur l'API (produits + catégories) avec fallback local
+  const suggestions = useMemo(() => {
+    const local =
+      q.trim().length > 0
+        ? categories.filter((c) => c.name.toLowerCase().includes(q.trim().toLowerCase())).slice(0, 6)
+        : []
+    if (serverResults.products.length || serverResults.categories.length) {
+      return {
+        products: serverResults.products,
+        categories: serverResults.categories,
+      }
+    }
+    return { products: [], categories: local }
+  }, [q, categories, serverResults])
 
   return (
     <section className="relative overflow-hidden">
@@ -156,9 +165,24 @@ export function Hero() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/60" aria-hidden="true" />
               <Input
                 value={q}
-                onChange={(e) => {
-                  setQ(e.target.value)
+                onChange={async (e) => {
+                  const value = e.target.value
+                  setQ(value)
                   setShowSuggest(true)
+                  if (value.trim().length === 0) {
+                    setServerResults({ products: [], categories: [] })
+                    return
+                  }
+                  setLoadingSuggest(true)
+                  try {
+                    const res = await fetch(`/api/search?q=${encodeURIComponent(value)}&limit=6`, { cache: "no-store" })
+                    const json = await res.json()
+                    setServerResults({ products: json.products || [], categories: json.categories || [] })
+                  } catch {
+                    setServerResults({ products: [], categories: [] })
+                  } finally {
+                    setLoadingSuggest(false)
+                  }
                 }}
                 onFocus={() => setShowSuggest(true)}
                 onBlur={() => setTimeout(() => setShowSuggest(false), 120)}
@@ -170,23 +194,52 @@ export function Hero() {
                 )}
                 aria-label="Saisir votre recherche"
               />
-              {showSuggest && suggestions.length > 0 && (
+              {showSuggest && (suggestions.categories.length > 0 || suggestions.products.length > 0) && (
                 <div className="absolute z-10 mt-1 w-full rounded-lg bg-white shadow-xl ring-1 ring-black/10 overflow-hidden">
-                  <ul className="max-h-64 overflow-auto">
-                    {suggestions.map((c) => (
-                      <li key={c.id}>
-                        <Link
-                          href={`/categories/${c.slug}`}
-                          onClick={() => {
-                            track("hero_suggest_click", { category: c.slug })
-                          }}
-                          className="block px-3 py-2 text-sm text-gray-800 hover:bg-gray-50"
-                        >
-                          {c.name}
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
+                  <div className="max-h-80 overflow-auto divide-y">
+                    {loadingSuggest && (
+                      <div className="px-3 py-2 text-sm text-gray-500">Recherche…</div>
+                    )}
+                    {suggestions.products.length > 0 && (
+                      <div className="py-2">
+                        <div className="px-3 pb-1 text-xs font-semibold text-gray-500">Produits</div>
+                        <ul>
+                          {suggestions.products.map((p: any) => (
+                            <li key={p.id}>
+                              <Link
+                                href={`/products/${p.slug}`}
+                                onClick={() => track("hero_suggest_click_product", { product: p.slug })}
+                                className="block px-3 py-2 text-sm text-gray-800 hover:bg-gray-50"
+                              >
+                                {p.name}
+                              </Link>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {suggestions.categories.length > 0 && (
+                      <div className="py-2">
+                        <div className="px-3 pb-1 text-xs font-semibold text-gray-500">Catégories</div>
+                        <ul>
+                          {suggestions.categories.map((c: any) => (
+                            <li key={c.id}>
+                              <Link
+                                href={`/categories/${c.slug}`}
+                                onClick={() => track("hero_suggest_click_category", { category: c.slug })}
+                                className="block px-3 py-2 text-sm text-gray-800 hover:bg-gray-50"
+                              >
+                                {c.name}
+                              </Link>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {!loadingSuggest && suggestions.categories.length === 0 && suggestions.products.length === 0 && (
+                      <div className="px-3 py-2 text-sm text-gray-500">Aucun résultat</div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
