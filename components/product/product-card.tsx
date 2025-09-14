@@ -82,6 +82,18 @@ export function ProductCard({ product, onAddToCart, onToggleWishlist, compact = 
           />
         </Link>
 
+        {/* Corner ribbon for strong promo highlight */}
+        {discountPercentage > 0 && (
+          <div
+            className={`pointer-events-none absolute -left-10 top-3 -rotate-45 z-10 bg-red-600 text-white font-bold shadow-lg ${
+              compact ? "px-8 py-0.5 text-[10px]" : "px-10 py-1 text-xs md:text-sm"
+            }`}
+            aria-hidden="true"
+          >
+            -{discountPercentage}% PROMO
+          </div>
+        )}
+
         {/* Badges */}
         <div className="absolute top-2 left-2 flex flex-col gap-1">
           {product.is_featured && (
