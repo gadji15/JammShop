@@ -21,8 +21,10 @@ export async function GET(req: Request) {
   const from = (page - 1) * pageSize
   const to = from + pageSize - 1
 
+  const base = onSale ? "products_on_sale" : "products"
+
   let qb = supabase
-    .from("products")
+    .from(base)
     .select(
       `
       *,
@@ -30,7 +32,7 @@ export async function GET(req: Request) {
     `,
       { count: "exact" },
     )
-    .eq("is_active", true)
+    .eq(onSale ? undefined : "is_active", true as any)
 
   if (q) {
     qb = qb.or(`name.ilike.%${q}%,short_description.ilike.%${q}%`)
