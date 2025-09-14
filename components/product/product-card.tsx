@@ -7,7 +7,7 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Heart, ShoppingCart, Star } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
-import { useState } from "react"
+import { useMemo, useState } from "react"
 
 interface ProductCardProps {
   product: ProductWithCategory
@@ -43,6 +43,23 @@ export function ProductCard({ product, onAddToCart, onToggleWishlist, compact = 
   const discountPercentage = product.compare_price
     ? Math.round(((product.compare_price - product.price) / product.compare_price) * 100)
     : 0
+
+  const discountBgClass = useMemo(() => {
+    if (discountPercentage >= 40) return "bg-red-600 text-white"
+    if (discountPercentage >= 20) return "bg-orange-500 text-white"
+    if (discountPercentage >= 10) return "bg-amber-400 text-black"
+    if (discountPercentage > 0) return "bg-yellow-300 text-black"
+    return "bg-red-600 text-white"
+  }, [discountPercentage])
+
+  const isNew = useMemo(() => {
+    const created = (product as any).created_at
+    if (!created) return false
+    const createdMs = Date.parse(created)
+    if (Number.isNaN(createdMs)) return false
+    const sevenDaysMs = 7 * 24 * 60 * 60 * 1000
+    return Date.now() - createdMs <= sevenDaysMs
+  }, [product])
 
   // Ultra-compact white band in compact mode; standard sizes otherwise
   const badgeTextSize = compact ? "text-[9px] md:text-[10px]" : "text-[10px] md:text-xs"
@@ -85,12 +102,24 @@ export function ProductCard({ product, onAddToCart, onToggleWishlist, compact = 
         {/* Corner ribbon for strong promo highlight */}
         {discountPercentage > 0 && (
           <div
-            className={`pointer-events-none absolute -left-10 top-3 -rotate-45 z-10 bg-red-600 text-white font-bold shadow-lg ${
+            className={`pointer-events-none absolute -left-10 top-3 -rotate-45 z-10 ${discountBgClass} font-bold shadow-lg ${
               compact ? "px-8 py-0.5 text-[10px]" : "px-10 py-1 text-xs md:text-sm"
             }`}
             aria-hidden="true"
           >
             -{discountPercentage}% PROMO
+          </div>
+        )}
+
+        {/* New ribbon on the top-right (below wishlist) */}
+        {isNew && (
+          <div
+            className={`pointer-events-none absolute -right-10 top-4 rotate-45 z-10 bg-emerald-600 text-white font-semibold shadow ${
+              compact ? "px-6 py-0.5 text-[10px]" : "px-8 py-1 text-xs md:text-sm"
+            }`}
+            aria-hidden="true"
+          >
+            Nouveau
           </div>
         )}
 
@@ -102,7 +131,7 @@ export function ProductCard({ product, onAddToCart, onToggleWishlist, compact = 
             </Badge>
           )}
           {discountPercentage > 0 && (
-            <Badge variant="destructive" className={`bg-red-600 text-white ${badgeTextSize} px-1.5 py-0.5`}>
+            <Badge className={`${discountBgClass} ${badgeTextSize} px-1.5 py-0.5`}>
               -{discountPercentage}%
             </Badge>
           )}
@@ -158,8 +187,8 @@ export function ProductCard({ product, onAddToCart, onToggleWishlist, compact = 
           </Link>
 
           {/* Description removed in compact mode (including desktop) to reduce card height */}
-          {!compact && product.short_description && (
-            <p className={`${descText} text-gray-600 line-clamp-2`}>{product.short_description}</p>
+          {!compact && (product as any).short_description && (
+            <p className={`${descText} text-gray-600 line-clamp-2`}>{(product as any).short_description}</p>
           )}
 
           {/* Rating placeholder (hide on small to save height) */}
