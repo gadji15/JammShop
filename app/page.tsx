@@ -269,7 +269,6 @@ export default function HomePage() {
               </Button>
             </div>
           </div>
-          </div>
 
           {showcaseLoading ? (
             <ProductGridSkeleton count={8} />
