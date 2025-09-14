@@ -29,10 +29,25 @@ export function Hero() {
     } catch {}
   }, [])
 
-  // simple tracking wrapper (Vercel Analytics if present)
+  // simple tracking wrapper: Vercel Analytics + Supabase endpoint
   const track = (event: string, props?: Record<string, any>) => {
     try {
       ;(window as any).va?.track?.(event, props)
+    } catch {}
+
+    try {
+      const body = JSON.stringify({ name: event, props })
+      if (typeof navigator !== "undefined" && "sendBeacon" in navigator) {
+        const blob = new Blob([body], { type: "application/json" })
+        navigator.sendBeacon("/api/analytics", blob)
+      } else {
+        fetch("/api/analytics", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body,
+          keepalive: true,
+        }).catch(() => {})
+      }
     } catch {}
   }
 
