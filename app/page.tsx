@@ -13,8 +13,58 @@ import { ArrowRight, Package, Shield, Truck } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 
-export default function HomePage() {
+function FeaturedProducts() {
   const { products: showcaseProducts, loading: showcaseLoading, filter, setFilter } = useShowcaseProducts("featured")
+  const [compact, setCompact] = React.useState(true)
+
+  React.useEffect(() => {
+    try {
+      const stored = localStorage.getItem("homeFeaturedView")
+      if (stored === "comfortable") setCompact(false)
+      else setCompact(true)
+    } catch {
+      setCompact(true)
+    }
+  }, [])
+
+  const toggleView = () => {
+    const next = !compact
+    setCompact(next)
+    try {
+      localStorage.setItem("homeFeaturedView", next ? "compact" : "comfortable")
+    } catch {}
+  }
+
+  const handleAddToCart = async (productId: string) => {
+    console.log("Add to cart:", productId)
+  }
+
+  const handleToggleWishlist = async (productId: string) => {
+    console.log("Toggle wishlist:", productId)
+  }
+
+  if (showcaseLoading) {
+    return <ProductGridSkeleton count={8} />
+  }
+
+  return (
+    <>
+      <div className="flex items-center justify-center gap-2 mb-4">
+        <Button variant={compact ? "secondary" : "outline"} size="sm" onClick={toggleView}>
+          {compact ? "Affichage compact" : "Affichage confortable"}
+        </Button>
+      </div>
+      <ProductGrid
+        products={showcaseProducts}
+        onAddToCart={handleAddToCart}
+        onToggleWishlist={handleToggleWishlist}
+        compact={compact}
+      />
+    </>
+  )
+}
+
+export default function HomePage() {
   const { categories, loading: categoriesLoading } = useCategories()
 
   const handleAddToCart = async (productId: string) => {
@@ -218,12 +268,7 @@ export default function HomePage() {
           {showcaseLoading ? (
             <ProductGridSkeleton count={8} />
           ) : (
-            <ProductGrid
-              products={showcaseProducts}
-              onAddToCart={handleAddToCart}
-              onToggleWishlist={handleToggleWishlist}
-              compact
-            />
+            <FeaturedProducts />
           )}
 
           <div className="text-center mt-12">

@@ -50,7 +50,7 @@ export default function ProductsPage() {
 
   const { categories, loading: categoriesLoading } = useCategories()
 
-  // Read initial filters from URL
+  // Read initial filters from URL (and persisted view from localStorage if URL not provided)
   useEffect(() => {
     const sp = new URLSearchParams(searchParams?.toString() || "")
     const q = sp.get("query") || sp.get("q") || ""
@@ -62,8 +62,20 @@ export default function ProductsPage() {
     const sort = (sp.get("sort") || "newest") as ProductFiltersType["sortBy"]
     const pg = Math.max(1, Number(sp.get("page") || "1"))
     const ps = Math.min(60, Math.max(1, Number(sp.get("pageSize") || DEFAULT_PAGE_SIZE)))
-    const viewParam = (sp.get("view") || "compact").toLowerCase()
-    setCompactView(viewParam !== "comfortable")
+
+    // view: URL param takes precedence over localStorage, else default compact
+    const urlView = (sp.get("view") || "").toLowerCase()
+    if (urlView === "compact" || urlView === "comfortable") {
+      setCompactView(urlView !== "comfortable")
+    } else {
+      try {
+        const stored = localStorage.getItem("productsView")
+        if (stored === "comfortable") setCompactView(false)
+        else setCompactView(true)
+      } catch {
+        setCompactView(true)
+      }
+    }
 
     setFilters({
       categories: cats,
@@ -184,8 +196,10 @@ export default function ProductsPage() {
   const toggleView = () => {
     const nextCompact = !compactView
     setCompactView(nextCompact)
-    router.push(buildUrl({ view: nextCompact ? "compact" : "comfortable" }))
-  }
+    try {
+      localStorage.setItem("productsView", nextCompact ? "compact" : "comfortable")
+    } catch {}
+    router.push(buildUrl({ view: nextCompact ? "compact" : "
 
   const clearAll = () => {
     const cleared: ProductFiltersType = {
