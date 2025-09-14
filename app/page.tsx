@@ -277,6 +277,7 @@ export default function HomePage() {
               products={showcaseProducts}
               onAddToCart={handleAddToCart}
               onToggleWishlist={handleToggleWishlist}
+              compact
             />
           )}
 

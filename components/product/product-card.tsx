@@ -13,9 +13,10 @@ interface ProductCardProps {
   product: ProductWithCategory
   onAddToCart?: (productId: string) => void
   onToggleWishlist?: (productId: string) => void
+  compact?: boolean
 }
 
-export function ProductCard({ product, onAddToCart, onToggleWishlist }: ProductCardProps) {
+export function ProductCard({ product, onAddToCart, onToggleWishlist, compact = false }: ProductCardProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [isWishlisted, setIsWishlisted] = useState(false)
 
@@ -43,6 +44,21 @@ export function ProductCard({ product, onAddToCart, onToggleWishlist }: ProductC
     ? Math.round(((product.compare_price - product.price) / product.compare_price) * 100)
     : 0
 
+  const badgeTextSize = compact ? "text-[9px] md:text-[10px]" : "text-[10px] md:text-xs"
+  const wishBtnSize = compact ? "h-6 w-6 md:h-7 md:w-7" : "h-7 w-7 md:h-8 md:w-8"
+  const wishIconSize = compact ? "h-3 w-3 md:h-3.5 md:w-3.5" : "h-3.5 w-3.5 md:h-4 md:w-4"
+  const contentPadding = compact ? "p-2.5 md:p-3" : "p-3 md:p-4"
+  const spaceY = compact ? "space-y-1 md:space-y-1.5" : "space-y-1.5 md:space-y-2"
+  const categoryText = compact ? "text-[10px] md:text-[11px]" : "text-[11px] md:text-xs"
+  const titleText = compact ? "text-xs md:text-sm" : "text-sm md:text-base"
+  const descText = compact ? "text-[11px] md:text-xs" : "text-xs md:text-sm"
+  const starSize = compact ? "h-2.5 w-2.5 md:h-3 md:w-3" : "h-3 w-3 md:h-3.5 md:w-3.5"
+  const ratingText = compact ? "text-[9px] md:text-[10px]" : "text-[10px] md:text-xs"
+  const footerPadding = compact ? "p-2.5 md:p-3" : "p-3 md:p-4"
+  const priceText = compact ? "text-sm md:text-base" : "text-base md:text-lg"
+  const comparePriceText = compact ? "text-[11px] md:text-xs" : "text-xs md:text-sm"
+  const stockText = compact ? "text-[9px] md:text-[10px]" : "text-[10px] md:text-xs"
+
   return (
     <Card className="group overflow-hidden transition-all duration-300 hover:shadow-lg">
       <div className="relative aspect-square overflow-hidden">
@@ -58,19 +74,19 @@ export function ProductCard({ product, onAddToCart, onToggleWishlist }: ProductC
         {/* Badges */}
         <div className="absolute top-2 left-2 flex flex-col gap-1">
           {product.is_featured && (
-            <Badge variant="secondary" className="bg-blue-600 text-white text-[10px] md:text-xs px-1.5 py-0.5">
+            <Badge variant="secondary" className={`bg-blue-600 text-white ${badgeTextSize} px-1.5 py-0.5`}>
               Vedette
             </Badge>
           )}
           {discountPercentage > 0 && (
-            <Badge variant="destructive" className="bg-red-600 text-white text-[10px] md:text-xs px-1.5 py-0.5">
+            <Badge variant="destructive" className={`bg-red-600 text-white ${badgeTextSize} px-1.5 py-0.5`}>
               -{discountPercentage}%
             </Badge>
           )}
           {product.stock_quantity <= product.low_stock_threshold && (
             <Badge
               variant="outline"
-              className="bg-orange-100 text-orange-800 border-orange-300 text-[10px] md:text-xs px-1.5 py-0.5"
+              className={`bg-orange-100 text-orange-800 border-orange-300 ${badgeTextSize} px-1.5 py-0.5`}
             >
               Stock faible
             </Badge>
@@ -81,10 +97,10 @@ export function ProductCard({ product, onAddToCart, onToggleWishlist }: ProductC
         <Button
           variant="ghost"
           size="icon"
-          className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-white/80 hover:bg-white h-7 w-7 md:h-8 md:w-8"
+          className={`absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-white/80 hover:bg-white ${wishBtnSize}`}
           onClick={handleToggleWishlist}
         >
-          <Heart className={`h-3.5 w-3.5 md:h-4 md:w-4 ${isWishlisted ? "fill-red-500 text-red-500" : "text-gray-600"}`} />
+          <Heart className={`${wishIconSize} ${isWishlisted ? "fill-red-500 text-red-500" : "text-gray-600"}`} />
         </Button>
 
         {/* Quick add to cart */}
@@ -95,53 +111,53 @@ export function ProductCard({ product, onAddToCart, onToggleWishlist }: ProductC
             className="w-full bg-blue-600 hover:bg-blue-700 text-white"
             size="sm"
           >
-            <ShoppingCart className="h-3.5 w-3.5 md:h-4 md:w-4 mr-2" />
+            <ShoppingCart className={`${wishIconSize} mr-2`} />
             {isLoading ? "Ajout..." : product.stock_quantity === 0 ? "Rupture" : "Ajouter"}
           </Button>
         </div>
       </div>
 
-      <CardContent className="p-3 md:p-4">
-        <div className="space-y-1.5 md:space-y-2">
+      <CardContent className={contentPadding}>
+        <div className={spaceY}>
           {product.categories && (
             <Link
               href={`/categories/${product.categories.slug}`}
-              className="text-[11px] md:text-xs text-blue-600 hover:text-blue-800 font-medium"
+              className={`${categoryText} text-blue-600 hover:text-blue-800 font-medium`}
             >
               {product.categories.name}
             </Link>
           )}
 
           <Link href={`/products/${product.slug}`}>
-            <h3 className="font-semibold text-gray-900 text-sm md:text-base line-clamp-2 hover:text-blue-600 transition-colors">
+            <h3 className={`font-semibold text-gray-900 ${titleText} line-clamp-2 hover:text-blue-600 transition-colors`}>
               {product.name}
             </h3>
           </Link>
 
           {product.short_description && (
-            <p className="text-xs md:text-sm text-gray-600 line-clamp-2">{product.short_description}</p>
+            <p className={`${descText} text-gray-600 line-clamp-2`}>{product.short_description}</p>
           )}
 
           {/* Rating placeholder */}
           <div className="flex items-center gap-1">
             {[...Array(5)].map((_, i) => (
-              <Star key={i} className="h-3 w-3 md:h-3.5 md:w-3.5 fill-yellow-400 text-yellow-400" />
+              <Star key={i} className={`${starSize} fill-yellow-400 text-yellow-400`} />
             ))}
-            <span className="text-[10px] md:text-xs text-gray-500 ml-1">(4.5)</span>
+            <span className={`${ratingText} text-gray-500 ml-1`}>(4.5)</span>
           </div>
         </div>
       </CardContent>
 
-      <CardFooter className="p-3 md:p-4 pt-0">
+      <CardFooter className={`${footerPadding} pt-0`}>
         <div className="flex items-center justify-between w-full">
           <div className="flex items-center gap-2">
-            <span className="text-base md:text-lg font-bold text-gray-900">{product.price.toFixed(2)} €</span>
+            <span className={`${priceText} font-bold text-gray-900`}>{product.price.toFixed(2)} €</span>
             {product.compare_price && (
-              <span className="text-xs md:text-sm text-gray-500 line-through">{product.compare_price.toFixed(2)} €</span>
+              <span className={`${comparePriceText} text-gray-500 line-through`}>{product.compare_price.toFixed(2)} €</span>
             )}
           </div>
 
-          <div className="text-[10px] md:text-xs text-gray-500">Stock: {product.stock_quantity}</div>
+          <div className={`${stockText} text-gray-500`}>Stock: {product.stock_quantity}</div>
         </div>
       </CardFooter>
     </Card>
