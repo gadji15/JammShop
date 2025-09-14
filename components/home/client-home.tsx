@@ -130,6 +130,22 @@ function FeaturedProducts() {
     )
   }
 
+  const onChangeLimit = (n: number) => {
+    const norm = normalizeLimit(n)
+    setLimit(norm)
+    try {
+      localStorage.setItem("homeFeaturedLimit", String(norm))
+    } catch {}
+    router.replace(buildUrl({ featuredLimit: norm, featuredFilter: filter as FeaturedFilter, view: compact ? "compact" : "comfortable" }), { scroll: false })
+  }
+
+  const onVoirPlus = () => {
+    const options = [8, 12, 16, 24, 32, 48]
+    const currentIndex = options.findIndex((v) => v === limit)
+    const next = options[Math.min(options.length - 1, currentIndex + 1)] || 8
+    onChangeLimit(next)
+  }
+
   const handleAddToCart = async (productId: string) => {
     console.log("Add to cart:", productId)
   }
@@ -174,9 +190,24 @@ function FeaturedProducts() {
             <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
         </div>
-        <div className="flex items-center justify-center">
+        <div className="flex items-center justify-center gap-2">
           <Button variant={compact ? "secondary" : "outline"} size="sm" onClick={toggleView}>
             {compact ? "Affichage compact" : "Affichage confortable"}
+          </Button>
+          <label className="text-sm text-gray-600">Afficher</label>
+          <select
+            className="h-9 rounded-md border border-gray-300 px-2 text-sm"
+            value={limit}
+            onChange={(e) => onChangeLimit(Number(e.target.value))}
+          >
+            {[8, 12, 16, 24, 32, 48].map((n) => (
+              <option key={n} value={n}>
+                {n}
+              </option>
+            ))}
+          </select>
+          <Button variant="outline" size="sm" onClick={onVoirPlus}>
+            Voir plus
           </Button>
         </div>
       </div>
