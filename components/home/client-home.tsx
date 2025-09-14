@@ -14,6 +14,8 @@ import { ArrowRight, Package, Shield, Truck } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 
+type FeaturedFilter = "new" | "best" | "featured"
+
 function FeaturedProducts() {
   const { products: showcaseProducts, loading: showcaseLoading, filter, setFilter } = useShowcaseProducts("featured")
   const [compact, setCompact] = useState(true)
@@ -22,7 +24,7 @@ function FeaturedProducts() {
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
-  // Read view from URL first, then localStorage
+  // Read featuredView from URL first, then localStorage
   useEffect(() => {
     const fromUrl = (searchParams?.get("featuredView") || "").toLowerCase()
     if (fromUrl === "compact" || fromUrl === "comfortable") {
@@ -30,25 +32,31 @@ function FeaturedProducts() {
       try {
         localStorage.setItem("homeFeaturedView", fromUrl)
       } catch {}
-      return
-    }
-    try {
-      const stored = localStorage.getItem("homeFeaturedView")
-      if (stored === "comfortable") setCompact(false)
-      else setCompact(true)
-    } catch {
-      setCompact(true)
+    } else {
+      try {
+        const stored = localStorage.getItem("homeFeaturedView")
+        if (stored === "comfortable") setCompact(false)
+        else setCompact(true)
+      } catch {
+        setCompact(true)
+      }
     }
   }, [searchParams])
 
+  // Read featuredFilter from URL and sync to hook
+  useEffect(() => {
+    const f = (searchParams?.get("featuredFilter") || "").toLowerCase() as FeaturedFilter
+    if (f === "new" || f === "best" || f === "featured") {
+      if (f !== filter) setFilter(f)
+    }
+  }, [searchParams, filter, setFilter])
+
+  // Build URL with optional overrides
   const buildUrl = useMemo(() => {
-    return (nextView: "compact" | "comfortable") => {
+    return (opts: { view?: "compact" | "comfortable"; featuredFilter?: FeaturedFilter }) => {
       const sp = new URLSearchParams(searchParams?.toString() || "")
-      if (nextView === "compact") {
-        sp.set("featuredView", "compact")
-      } else {
-        sp.set("featuredView", "comfortable")
-      }
+      if (opts.view) sp.set("featuredView", opts.view)
+      if (opts.featuredFilter) sp.set("featuredFilter", opts.featuredFilter)
       return `${pathname}?${sp.toString()}`
     }
   }, [searchParams, pathname])
@@ -60,7 +68,12 @@ function FeaturedProducts() {
     try {
       localStorage.setItem("homeFeaturedView", view)
     } catch {}
-    router.replace(buildUrl(view), { scroll: false })
+    router.replace(buildUrl({ view, featuredFilter: filter as FeaturedFilter }), { scroll: false })
+  }
+
+  const onPickFilter = (f: FeaturedFilter) => {
+    if (f !== filter) setFilter(f)
+    router.replace(buildUrl({ featuredFilter: f, view: compact ? "compact" : "comfortable" }), { scroll: false })
   }
 
   const handleAddToCart = async (productId: string) => {
@@ -83,7 +96,7 @@ function FeaturedProducts() {
             variant={filter === "new" ? undefined : "outline"}
             size="sm"
             className={filter === "new" ? "bg-blue-600 hover:bg-blue-700 text-white" : "bg-transparent"}
-            onClick={() => setFilter("new")}
+            onClick={() => onPickFilter("new")}
           >
             Nouveautés
           </Button>
@@ -93,7 +106,7 @@ function FeaturedProducts() {
             variant={filter === "best" ? undefined : "outline"}
             size="sm"
             className={filter === "best" ? "bg-blue-600 hover:bg-blue-700 text-white" : "bg-transparent"}
-            onClick={() => setFilter("best")}
+            onClick={() => onPickFilter("best")}
           >
             Meilleures ventes
           </Button>
@@ -101,7 +114,7 @@ function FeaturedProducts() {
             variant={filter === "featured" ? undefined : "outline"}
             size="sm"
             className={filter === "featured" ? "bg-blue-600 hover:bg-blue-700 text-white" : "bg-transparent"}
-            onClick={() => setFilter("featured")}
+            onClick={() => onPickFilter("featured")}
           >
             Tout voir
             <ArrowRight className="ml-2 h-4 w-4" />
