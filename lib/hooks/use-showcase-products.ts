@@ -18,6 +18,46 @@ export function useShowcaseProducts(initial: ShowcaseFilter = "featured") {
         setLoading(true)
         const supabase = createClient()
 
+        if (f === "best") {
+          // Use materialized view product_sales_agg if available
+          const { data: sales, error: salesErr } = await supabase
+            .from("product_sales_agg")
+            .select("product_id, sales_count")
+            .order("sales_count", { ascending: false })
+            .limit(12)
+
+          if (salesErr) throw salesErr
+
+          const ids = (sales || []).map((s: any) => s.product_id)
+          if (ids.length === 0) {
+            setProducts([])
+            return
+          }
+
+          // Fetch corresponding products with categories
+          const { data: prods, error: prodErr } = await supabase
+            .from("products")
+            .select(
+              `
+              *,
+              categories (*)
+            `,
+            )
+            .eq("is_active", true)
+            .in("id", ids)
+
+          if (prodErr) throw prodErr
+
+          // Order products by the sales order
+          const orderMap = new Map(ids.map((id: string, idx: number) => [id, idx]))
+          const ordered = ((prods || []) as ProductWithCategory[]).sort(
+            (a, b) => (orderMap.get(a.id) ?? 0) - (orderMap.get(b.id) ?? 0),
+          )
+
+          setProducts(ordered.slice(0, 8))
+          return
+        }
+
         // Base select with category join
         let query = supabase
           .from("products")
@@ -33,23 +73,14 @@ export function useShowcaseProducts(initial: ShowcaseFilter = "featured") {
           query = query.eq("is_featured", true).order("created_at", { ascending: false })
         } else if (f === "new") {
           query = query.order("created_at", { ascending: false })
-        } else if (f === "best") {
-          // NOTE: In absence of sales metrics, approximate "best sellers"
-          // You may replace this with a server-side view/materialized view
-          // that aggregates order_items counts and join here.
-          // For now we promote featured first, then by lowest compare_price nulls last and lowest stock as a weak proxy.
-          query = query
-            .order("is_featured", { ascending: false }) // show featured first
-            .order("stock_quantity", { ascending: true, nullsFirst: false }) // assume fast movers have lower stock
-            .order("created_at", { ascending: false })
         }
 
         const { data, error } = await query.limit(8)
-
         if (error) throw error
         setProducts((data as ProductWithCategory[]) || [])
       } catch (err) {
         setError(err instanceof Error ? err.message : "An error occurred")
+        setProducts([])
       } finally {
         setLoading(false)
       }
