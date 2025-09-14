@@ -24,7 +24,11 @@ export function Hero() {
 
   const clearRecent = () => {
     try {
-      localStorage.removeItem)
+      localStorage.removeItem("heroRecent")
+    } catch {}
+    setRecent([])
+    track("hero_recent_clear")
+  }
 
   // load recent on mount
   useEffect(() => {
