@@ -298,17 +298,19 @@ export default function ProductsPage() {
         </div>
 
         {/* Toolbar: count, sort, page size, filters button */}
-        <div className="mb-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-          <p className="text-gray-600">
+        <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <p className="text-gray-600 order-2 md:order-1">
             {loading ? "Chargement..." : `${total.toLocaleString()} produit(s) • Page ${page}/${totalPages}`}
           </p>
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2">
-              <label className="text-sm text-gray-600">Trier</label>
+
+          <div className="order-1 md:order-2 w-full md:w-auto grid grid-cols-2 gap-2 sm:gap-3 items-center">
+            {/* Sort */}
+            <div className="flex items-center gap-2 min-w-0">
+              <label className="text-sm text-gray-600 shrink-0">Trier</label>
               <select
                 value={filters.sortBy}
                 onChange={(e) => handleSortChange(e.target.value as ProductFiltersType["sortBy"])}
-                className="h-9 rounded-md border border-gray-300 px-2 text-sm"
+                className="h-9 rounded-md border border-gray-300 px-2 text-sm w-full min-w-0"
               >
                 <option value="newest">Nouveautés</option>
                 <option value="oldest">Plus anciens</option>
@@ -317,12 +319,14 @@ export default function ProductsPage() {
                 <option value="name">Nom (A→Z)</option>
               </select>
             </div>
-            <div className="flex items-center gap-2">
-              <label className="text-sm text-gray-600">Par page</label>
+
+            {/* Page size */}
+            <div className="flex items-center gap-2 justify-end md:justify-start">
+              <label className="text-sm text-gray-600 shrink-0">Par page</label>
               <select
                 value={pageSize}
                 onChange={(e) => handlePageSizeChange(Number(e.target.value))}
-                className="h-9 rounded-md border border-gray-300 px-2 text-sm"
+                className="h-9 rounded-md border border-gray-300 px-2 text-sm w-[84px] sm:w-[100px]"
               >
                 <option value={12}>12</option>
                 <option value={24}>24</option>
@@ -330,7 +334,9 @@ export default function ProductsPage() {
                 <option value={48}>48</option>
               </select>
             </div>
-            <Button variant="outline" onClick={() => setShowFilters(true)}>
+
+            {/* Filters button spans full width on small screens */}
+            <Button variant="outline" onClick={() => setShowFilters(true)} className="col-span-2 md:col-span-1">
               <Filter className="h-4 w-4 mr-2" />
               Filtres
             </Button>
