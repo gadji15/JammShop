@@ -4,7 +4,7 @@ import ClientHome from "@/components/home/client-home"
 
 export default async function HomePage() {
   // Server-side: pick the A/B variant from cookie set by middleware
-  const cookieStore = cookies()
+  const cookieStore = await cookies()
   const variant = (cookieStore.get("ab_variant")?.value === "hero2" ? "hero2" : "hero1") as "hero1" | "hero2"
 
   return (

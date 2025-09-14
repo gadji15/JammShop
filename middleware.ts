@@ -22,7 +22,7 @@ export async function middleware(request: NextRequest) {
   if (abParam === "hero1" || abParam === "hero2") {
     picked = abParam
   } else if (!abCookie || (abCookie !== "hero1" && abCookie !== "hero2")) {
-    picked = Math.random() &lt; 0.5 ? "hero1" : "hero2"
+    picked = Math.random() < 0.5 ? "hero1" : "hero2"
   }
 
   if (picked && picked !== abCookie) {
