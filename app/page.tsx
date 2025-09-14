@@ -266,33 +266,7 @@ export default function HomePage() {
               Des best-sellers et nouveautés triés pour vous. Qualité, prix et disponibilité au rendez-vous.
             </p>
 
-            <div className="mt-2 flex items-center gap-2">
-              <Button
-                variant={filter === "new" ? undefined : "outline"}
-                size="sm"
-                className={filter === "new" ? "bg-blue-600 hover:bg-blue-700 text-white" : "bg-transparent"}
-                onClick={() => setFilter("new")}
-              >
-                Nouveautés
-              </Button>
-              <Button
-                variant={filter === "best" ? undefined : "outline"}
-                size="sm"
-                className={filter === "best" ? "bg-blue-600 hover:bg-blue-700 text-white" : "bg-transparent"}
-                onClick={() => setFilter("best")}
-              >
-                Meilleures ventes
-              </Button>
-              <Button
-                variant={filter === "featured" ? undefined : "outline"}
-                size="sm"
-                className={filter === "featured" ? "bg-blue-600 hover:bg-blue-700 text-white" : "bg-transparent"}
-                onClick={() => setFilter("featured")}
-              >
-                Tout voir
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </div>
+            
           </div>
 
           {showcaseLoading ? (
