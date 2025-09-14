@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { useCategories } from "@/lib/hooks/use-categories"
 import { useShowcaseProducts } from "@/lib/hooks/use-showcase-products"
+import { Carousel, CarouselItem } from "@/components/ui/carousel"
 import { ArrowRight, Package, Shield, Truck } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
@@ -90,7 +91,7 @@ export default function HomePage() {
 
       {/* Categories Section */}
       <section className="py-14 md:py-20 bg-gradient-to-b from-white to-gray-50">
-        <div className="container mx-auto px-4">
+        <div className="container mx-auto px-4 relative">
           <div className="text-center mb-10 md:mb-16">
             <Badge className="bg-blue-100 text-blue-800 mb-3 md:mb-4">Catégories populaires</Badge>
             <h2 className="text-3xl md:text-5xl font-bold text-gray-900 mb-4 md:mb-6 text-balance">
@@ -102,6 +103,16 @@ export default function HomePage() {
             </p>
           </div>
 
+          {/* Bouton Voir plus (top-right) */}
+          <div className="hidden md:block absolute right-4 top-4">
+            <Button asChild variant="outline" size="sm" className="bg-transparent">
+              <Link href="/products">
+                Voir plus
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+          </div>
+
           {categoriesLoading ? (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
               {[...Array(10)].map((_, i) => (
@@ -110,38 +121,41 @@ export default function HomePage() {
             </div>
           ) : (
             <>
-              {/* Mobile: horizontal scroll to réduire la hauteur */}
-              <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-2 -mx-4 px-4 md:hidden mb-6">
-                {categories.slice(0, 10).map((category, index) => (
-                  <Link
-                    key={category.id}
-                    href={`/categories/${category.slug}`}
-                    className="min-w-[180px] snap-start group block animate-fade-in-up"
-                    style={{ animationDelay: `${index * 100}ms` }}
-                  >
-                    <Card className="overflow-hidden transition-all duration-500 hover:shadow-2xl group-hover:scale-105 border-0 shadow-lg">
-                      <div className="aspect-square relative">
-                        <Image
-                          src={category.image_url || `/placeholder.svg`}
-                          alt={category.name}
-                          fill
-                          className="object-cover transition-transform duration-500 group-hover:scale-110"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent group-hover:from-black/70 transition-all duration-300" />
-                        <div className="absolute inset-0 flex items-end p-3">
-                          <div className="text-white">
-                            <h3 className="font-bold text-base mb-0.5 group-hover:text-yellow-300 transition-colors">
-                              {category.name}
-                            </h3>
-                            <p className="text-xs text-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                              Découvrir →
-                            </p>
+              {/* Mobile: Embla carousel pour réduire la hauteur */}
+              <div className="md:hidden -mx-4 px-4 mb-6">
+                <Carousel options={{ align: "start", dragFree: true }}>
+                  {categories.slice(0, 10).map((category, index) => (
+                    <CarouselItem key={category.id} className="min-w-[180px]">
+                      <Link
+                        href={`/categories/${category.slug}`}
+                        className="group block animate-fade-in-up"
+                        style={{ animationDelay: `${index * 100}ms` }}
+                      >
+                        <Card className="overflow-hidden transition-all duration-500 hover:shadow-2xl group-hover:scale-105 border-0 shadow-lg">
+                          <div className="aspect-square relative">
+                            <Image
+                              src={category.image_url || `/placeholder.svg`}
+                              alt={category.name}
+                              fill
+                              className="object-cover transition-transform duration-500 group-hover:scale-110"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent group-hover:from-black/70 transition-all duration-300" />
+                            <div className="absolute inset-0 flex items-end p-3">
+                              <div className="text-white">
+                                <h3 className="font-bold text-base mb-0.5 group-hover:text-yellow-300 transition-colors">
+                                  {category.name}
+                                </h3>
+                                <p className="text-xs text-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                  Découvrir →
+                                </p>
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                      </div>
-                    </Card>
-                  </Link>
-                ))}
+                        </Card>
+                      </Link>
+                    </CarouselItem>
+                  ))}
+                </Carousel>
               </div>
 
               {/* Desktop/Tablet: grille classique */}
@@ -197,23 +211,33 @@ export default function HomePage() {
       </section>
 
       {/* Featured Products Section (just after categories with improved UI) */}
-      <section className="relative py-20 bg-gradient-to-b from-gray-50 to-white">
+      <section className="relative py-16 md:py-20 bg-gradient-to-b from-gray-50 to-white">
         <div className="pointer-events-none absolute inset-0 [mask-image:radial-gradient(70%_60%_at_50%_0%,black,transparent)]">
           <div className="absolute -top-24 left-1/2 h-56 w-[80%] -translate-x-1/2 rounded-full bg-blue-200/30 blur-3xl"></div>
         </div>
 
         <div className="relative container mx-auto px-4">
-          <div className="flex flex-col gap-4 items-center text-center mb-12">
+          {/* Bouton Voir plus (top-right) */}
+          <div className="hidden md:block absolute right-4 -top-2">
+            <Button asChild variant="outline" size="sm" className="bg-transparent">
+              <Link href="/products">
+                Voir plus
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+          </div>
+
+          <div className="flex flex-col gap-4 items-center text-center mb-10 md:mb-12">
             <div className="flex items-center gap-3">
               <Badge variant="secondary" className="bg-blue-100 text-blue-800 px-3 py-1">
                 Produits vedettes
               </Badge>
               <span className="text-sm text-gray-500">Mis à jour aujourd'hui</span>
             </div>
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 text-balance">
+            <h2 className="text-3xl md:text-5xl font-bold text-gray-900 text-balance">
               Notre sélection <span className="text-blue-600">incontournable</span>
             </h2>
-            <p className="text-lg text-gray-600 max-w-2xl">
+            <p className="text-base md:text-lg text-gray-600 max-w-2xl">
               Des best-sellers et nouveautés triés pour vous. Qualité, prix et disponibilité au rendez-vous.
             </p>
 
@@ -244,6 +268,7 @@ export default function HomePage() {
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </div>
+          </div>
           </div>
 
           {showcaseLoading ? (
