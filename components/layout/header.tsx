@@ -9,7 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet"
 import { useCategories } from "@/lib/hooks/use-categories"
 import { createClient } from "@/lib/supabase/client"
 import { Heart, Menu, Search, ShoppingCart, User, Settings } from "lucide-react"
@@ -247,34 +247,35 @@ export function Header() {
                     <span className="sr-only">Menu</span>
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="right" className="w-80 p-0">
-                  <div className="flex flex-col h-full">
-                    {/* Header */}
-                    <div className="p-6 border-b bg-gradient-to-r from-blue-50 to-purple-50">
-                      <div className="flex items-center space-x-2">
-                        <div className="relative">
-                          <svg width="32" height="32" viewBox="0 0 32 32" className="drop-shadow-sm">
-                            <defs>
-                              <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                                <stop offset="0%" stopColor="#3B82F6" />
-                                <stop offset="50%" stopColor="#6366F1" />
-                                <stop offset="100%" stopColor="#8B5CF6" />
-                              </linearGradient>
-                            </defs>
-                            <rect width="32" height="32" rx="8" fill="url(#logoGradient)" />
-                            <path d="M8 12h16v2H8zm0 4h12v2H8zm0 4h8v2H8z" fill="white" opacity="0.9" />
-                            <circle cx="22" cy="20" r="3" fill="white" opacity="0.8" />
-                            <path d="M21 19l1 1 2-2" stroke="#3B82F6" strokeWidth="1.5" fill="none" />
-                          </svg>
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="font-bold text-xl bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                            JammShop
-                          </span>
-                          <span className="text-xs text-gray-500 -mt-1 hidden sm:block">Marketplace</span>
-                        </div>
+                <SheetContent side="right" className="w-80 p-0" aria-describedby={undefined}>
+                  <SheetHeader className="p-6 border-b bg-gradient-to-r from-blue-50 to-purple-50">
+                    <SheetTitle className="sr-only">Menu mobile</SheetTitle>
+                    <SheetDescription className="sr-only">Navigation principale de JammShop</SheetDescription>
+                    <div className="flex items-center space-x-2">
+                      <div className="relative">
+                        <svg width="32" height="32" viewBox="0 0 32 32" className="drop-shadow-sm">
+                          <defs>
+                            <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                              <stop offset="0%" stopColor="#3B82F6" />
+                              <stop offset="50%" stopColor="#6366F1" />
+                              <stop offset="100%" stopColor="#8B5CF6" />
+                            </linearGradient>
+                          </defs>
+                          <rect width="32" height="32" rx="8" fill="url(#logoGradient)" />
+                          <path d="M8 12h16v2H8zm0 4h12v2H8zm0 4h8v2H8z" fill="white" opacity="0.9" />
+                          <circle cx="22" cy="20" r="3" fill="white" opacity="0.8" />
+                          <path d="M21 19l1 1 2-2" stroke="#3B82F6" strokeWidth="1.5" fill="none" />
+                        </svg>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="font-bold text-xl bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                          JammShop
+                        </span>
+                        <span className="text-xs text-gray-500 -mt-1 hidden sm:block">Marketplace</span>
                       </div>
                     </div>
+                  </SheetHeader>
+                  <div className="flex flex-col h-full">
 
                     {/* Scrollable Content */}
                     <div className="flex-1 overflow-y-auto p-6">
