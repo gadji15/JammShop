@@ -166,7 +166,7 @@ export function Hero() {
       </div>
 
       {/* Content */}
-      <div className="relative container mx-auto px-4 py-16 md:py-24">
+      <div className="relative z-10 container mx-auto px-4 py-16 md:py-24">
         <div className="max-w-3xl text-center md:text-left">
           <div className="flex items-center justify-center md:justify-start gap-2 mb-4">
             <Badge className="bg-white/20 text-white border-white/30">Nouveau sur JammShop</Badge>
