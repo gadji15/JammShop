@@ -13,6 +13,11 @@ export default async function HomePage() {
       <section className="relative bg-black text-white">
         <Hero forcedVariant={variant} />
       </section>
+      {/* Client sections (categories, featured products, features, newsletter) */}
+      <ClientHome />
+    </div>
+  )
+}
 
       {/* Categories Section */}
       <section className="py-14 md:py-20 bg-gradient-to-b from-white to-gray-50">
