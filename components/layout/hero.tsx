@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -20,6 +21,10 @@ export function Hero() {
   const [loadingSuggest, setLoadingSuggest] = useState(false)
   const [recent, setRecent] = useState<string[]>([])
   const videoRef = useRef<HTMLVideoElement>(null)
+
+  const clearRecent = () => {
+    try {
+      localStorage.removeItem)
 
   // load recent on mount
   useEffect(() => {
@@ -249,7 +254,16 @@ export function Hero() {
                       q.trim().length === 0 &&
                       recent.length > 0 && (
                         <div className="py-2">
-                          <div className="px-3 pb-1 text-xs font-semibold text-gray-500">Recherches récentes</div>
+                          <div className="px-3 pb-1 text-xs font-semibold text-gray-500 flex items-center justify-between">
+                            <span>Recherches récentes</span>
+                            <button
+                              type="button"
+                              className="text-xs text-blue-600 hover:underline"
+                              onClick={clearRecent}
+                            >
+                              Effacer
+                            </button>
+                          </div>
                           <ul>
                             {recent.map((term) => (
                               <li key={term}>

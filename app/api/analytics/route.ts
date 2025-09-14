@@ -34,3 +34,36 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: e?.message || "Invalid payload" }, { status: 400 })
   }
 }
+
+export async function GET(req: Request) {
+  const supabase = await createClient()
+  const { searchParams } = new URL(req.url)
+  const page = Math.max(1, Number(searchParams.get("page") || "1"))
+  const pageSize = Math.min(100, Math.max(1, Number(searchParams.get("pageSize") || "20")))
+  const name = searchParams.get("name") || undefined
+  const from = (page - 1) * pageSize
+  const to = from + pageSize - 1
+
+  let qb = supabase
+    .from("analytics_events")
+    .select("*", { count: "exact" })
+    .order("created_at", { ascending: false })
+    .range(from, to)
+
+  if (name) {
+    qb = qb.eq("name", name)
+  }
+
+  const { data, count, error } = await qb
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+
+  return NextResponse.json({
+    data,
+    page,
+    pageSize,
+    total: count ?? 0,
+    totalPages: Math.ceil((count ?? 0) / pageSize),
+  })
+}
