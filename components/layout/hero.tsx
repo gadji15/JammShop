@@ -18,7 +18,16 @@ export function Hero() {
   const [showSuggest, setShowSuggest] = useState(false)
   const [serverResults, setServerResults] = useState<{ products: any[]; categories: any[] }>({ products: [], categories: [] })
   const [loadingSuggest, setLoadingSuggest] = useState(false)
+  const [recent, setRecent] = useState<string[]>([])
   const videoRef = useRef<HTMLVideoElement>(null)
+
+  // load recent on mount
+  useEffect(() => {
+    try {
+      const prev = JSON.parse(localStorage.getItem("heroRecent") || "[]") as string[]
+      setRecent(prev)
+    } catch {}
+  }, [])
 
   // simple tracking wrapper (Vercel Analytics if present)
   const track = (event: string, props?: Record<string, any>) => {
@@ -31,6 +40,14 @@ export function Hero() {
     e.preventDefault()
     const query = q.trim()
     track("hero_search", { q_len: query.length, has_query: query.length > 0 })
+    if (query) {
+      try {
+        const prev = JSON.parse(localStorage.getItem("heroRecent") || "[]") as string[]
+        const next = [query, ...prev.filter((x) => x !== query)].slice(0, 6)
+        localStorage.setItem("heroRecent", JSON.stringify(next))
+        setRecent(next)
+      } catch {}
+    }
     router.push(query ? `/products?query=${encodeURIComponent(query)}` : "/products")
     setShowSuggest(false)
   }
@@ -194,12 +211,34 @@ export function Hero() {
                 )}
                 aria-label="Saisir votre recherche"
               />
-              {showSuggest && (suggestions.categories.length > 0 || suggestions.products.length > 0) && (
+              {showSuggest && (
                 <div className="absolute z-10 mt-1 w-full rounded-lg bg-white shadow-xl ring-1 ring-black/10 overflow-hidden">
                   <div className="max-h-80 overflow-auto divide-y">
-                    {loadingSuggest && (
-                      <div className="px-3 py-2 text-sm text-gray-500">Recherche…</div>
-                    )}
+                    {loadingSuggest && <div className="px-3 py-2 text-sm text-gray-500">Recherche…</div>}
+
+                    {/* Recent when empty */}
+                    {!loadingSuggest &&
+                      q.trim().length === 0 &&
+                      recent.length > 0 && (
+                        <div className="py-2">
+                          <div className="px-3 pb-1 text-xs font-semibold text-gray-500">Recherches récentes</div>
+                          <ul>
+                            {recent.map((term) => (
+                              <li key={term}>
+                                <Link
+                                  href={`/products?query=${encodeURIComponent(term)}`}
+                                  className="block px-3 py-2 text-sm text-gray-800 hover:bg-gray-50"
+                                  onClick={() => track("hero_recent_click", { q: term })}
+                                >
+                                  {term}
+                                </Link>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                    {/* Server products */}
                     {suggestions.products.length > 0 && (
                       <div className="py-2">
                         <div className="px-3 pb-1 text-xs font-semibold text-gray-500">Produits</div>
@@ -218,6 +257,8 @@ export function Hero() {
                         </ul>
                       </div>
                     )}
+
+                    {/* Server/Local categories */}
                     {suggestions.categories.length > 0 && (
                       <div className="py-2">
                         <div className="px-3 pb-1 text-xs font-semibold text-gray-500">Catégories</div>
@@ -236,9 +277,14 @@ export function Hero() {
                         </ul>
                       </div>
                     )}
-                    {!loadingSuggest && suggestions.categories.length === 0 && suggestions.products.length === 0 && (
-                      <div className="px-3 py-2 text-sm text-gray-500">Aucun résultat</div>
-                    )}
+
+                    {/* Empty state */}
+                    {!loadingSuggest &&
+                      q.trim().length > 0 &&
+                      suggestions.categories.length === 0 &&
+                      suggestions.products.length === 0 && (
+                        <div className="px-3 py-2 text-sm text-gray-500">Aucun résultat</div>
+                      )}
                   </div>
                 </div>
               )}
