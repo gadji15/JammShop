@@ -1,19 +1,21 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { ArrowRight, Search, Shield, Truck, Package } from "lucide-react"
+import { ArrowRight, Search, Shield, Truck, Package, Sparkles } from "lucide-react"
 import { useCategories } from "@/lib/hooks/use-categories"
 import { cn } from "@/lib/utils"
 
 export function Hero() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { categories } = useCategories()
   const [q, setQ] = useState("")
+  const videoRef = useRef<HTMLVideoElement>(null)
 
   const onSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -22,12 +24,72 @@ export function Hero() {
   }
 
   // External media placeholders (royalty-free)
-  const videoSrc =
-    "https://cdn.coverr.co/videos/coverr-online-shopping-1556/1080p.mp4"
+  const videoSrc = "https://cdn.coverr.co/videos/coverr-online-shopping-1556/1080p.mp4"
   const posterSrc =
     "https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=1600&auto=format&fit=crop"
   const mobileBg =
     "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?q=80&w=1200&auto=format&fit=crop"
+
+  // A/B test lightweight: query param ?ab=hero2 or persisted session choice
+  const variant = useMemo(() => {
+    const param = searchParams?.get("ab")
+    if (param === "hero2" || param === "hero1") return param
+    if (typeof window !== "undefined") {
+      const stored = sessionStorage.getItem("heroVariant")
+      if (stored === "hero2" || stored === "hero1") return stored
+      const picked = Math.random() < 0.5 ? "hero1" : "hero2"
+      sessionStorage.setItem("heroVariant", picked)
+      return picked
+    }
+    return "hero1"
+  }, [searchParams])
+
+  // Video behavior: pause on hidden tab or reduced motion
+  useEffect(() => {
+    const video = videoRef.current
+    if (!video) return
+    const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)")
+    const handlePref = () => {
+      if (prefersReduced.matches) {
+        video.pause()
+      } else {
+        // Try play, ignore errors due to autoplay policies (muted=true helps)
+        video.play().catch(() => {})
+      }
+    }
+    const onVisibility = () => {
+      if (document.hidden) {
+        video.pause()
+      } else if (!prefersReduced.matches) {
+        video.play().catch(() => {})
+      }
+    }
+    handlePref()
+    prefersReduced.addEventListener?.("change", handlePref)
+    document.addEventListener("visibilitychange", onVisibility)
+    return () => {
+      prefersReduced.removeEventListener?.("change", handlePref)
+      document.removeEventListener("visibilitychange", onVisibility)
+    }
+  }, [])
+
+  const headline =
+    variant === "hero2"
+      ? (
+          <>
+            Trouvez tout. <span className="text-yellow-300">Au meilleur prix.</span>
+          </>
+        )
+      : (
+          <>
+            Achetez malin. Vendez plus. <span className="text-yellow-300">Sans effort.</span>
+          </>
+        )
+
+  const subline =
+    variant === "hero2"
+      ? "Comparez en un clin d’œil. Commandez en toute confiance. Livraison rapide partout."
+      : "La marketplace de confiance pour découvrir, comparer et commander vos produits au meilleur prix."
 
   return (
     <section className="relative overflow-hidden">
@@ -35,6 +97,7 @@ export function Hero() {
       <div className="absolute inset-0">
         {/* Desktop video background */}
         <video
+          ref={videoRef}
           className="hidden md:block h-full w-full object-cover"
           autoPlay
           muted
@@ -64,16 +127,14 @@ export function Hero() {
           </div>
 
           <h1 className="text-white text-4xl md:text-6xl font-extrabold tracking-tight leading-tight">
-            Achetez malin. Vendez plus. <span className="text-yellow-300">Sans effort.</span>
+            {headline}
           </h1>
-          <p className="mt-3 md:mt-4 text-base md:text-xl text-white/85">
-            La marketplace de confiance pour découvrir, comparer et commander vos produits au meilleur prix.
-          </p>
+          <p className="mt-3 md:mt-4 text-base md:text-xl text-white/85">{subline}</p>
 
           {/* Search bar */}
-          <form onSubmit={onSearch} className="mt-5 md:mt-8 flex gap-2">
+          <form onSubmit={onSearch} className="mt-5 md:mt-8 flex gap-2" aria-label="Recherche de produits">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/60" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/60" aria-hidden="true" />
               <Input
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
@@ -83,9 +144,10 @@ export function Hero() {
                   "bg-white/90 text-gray-900 placeholder:text-gray-500",
                   "focus:bg-white shadow-lg",
                 )}
+                aria-label="Saisir votre recherche"
               />
             </div>
-            <Button type="submit" className="h-11 md:h-12 px-5 md:px-6 bg-blue-600 hover:bg-blue-700">
+            <Button type="submit" className="h-11 md:h-12 px-5 md:px-6 bg-blue-600 hover:bg-blue-700" aria-label="Lancer la recherche">
               Rechercher
             </Button>
           </form>
@@ -100,6 +162,13 @@ export function Hero() {
             </Button>
             <Button asChild variant="outline" className="text-white border-white/60 hover:bg-white hover:text-blue-700">
               <Link href="/auth/register">Devenir vendeur</Link>
+            </Button>
+            {/* Secondary CTA visible on md+ */}
+            <Button asChild variant="outline" className="hidden md:inline-flex text-white border-white/60 hover:bg-white hover:text-blue-700">
+              <Link href="/products?promo=1">
+                <Sparkles className="mr-2 h-4 w-4" />
+                Voir les promos
+              </Link>
             </Button>
           </div>
 
