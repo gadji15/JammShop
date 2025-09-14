@@ -6,13 +6,13 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { useCategories } from "@/lib/hooks/use-categories"
-import { useFeaturedProducts } from "@/lib/hooks/use-products"
+import { useShowcaseProducts } from "@/lib/hooks/use-showcase-products"
 import { ArrowRight, Package, Shield, Truck } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 
 export default function HomePage() {
-  const { products: featuredProducts, loading: productsLoading } = useFeaturedProducts()
+  const { products: showcaseProducts, loading: showcaseLoading, filter, setFilter } = useShowcaseProducts("featured")
   const { categories, loading: categoriesLoading } = useCategories()
 
   const handleAddToCart = async (productId: string) => {
@@ -183,26 +183,39 @@ export default function HomePage() {
             </p>
 
             <div className="mt-2 flex items-center gap-2">
-              <Button asChild variant="outline" size="sm" className="bg-transparent">
-                <Link href="/products">Nouveautés</Link>
+              <Button
+                variant={filter === "new" ? undefined : "outline"}
+                size="sm"
+                className={filter === "new" ? "bg-blue-600 hover:bg-blue-700 text-white" : "bg-transparent"}
+                onClick={() => setFilter("new")}
+              >
+                Nouveautés
               </Button>
-              <Button asChild variant="outline" size="sm" className="bg-transparent">
-                <Link href="/products">Meilleures ventes</Link>
+              <Button
+                variant={filter === "best" ? undefined : "outline"}
+                size="sm"
+                className={filter === "best" ? "bg-blue-600 hover:bg-blue-700 text-white" : "bg-transparent"}
+                onClick={() => setFilter("best")}
+              >
+                Meilleures ventes
               </Button>
-              <Button asChild size="sm" className="bg-blue-600 hover:bg-blue-700">
-                <Link href="/products">
-                  Tout voir
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
+              <Button
+                variant={filter === "featured" ? undefined : "outline"}
+                size="sm"
+                className={filter === "featured" ? "bg-blue-600 hover:bg-blue-700 text-white" : "bg-transparent"}
+                onClick={() => setFilter("featured")}
+              >
+                Tout voir
+                <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </div>
           </div>
 
-          {productsLoading ? (
+          {showcaseLoading ? (
             <ProductGridSkeleton count={8} />
           ) : (
             <ProductGrid
-              products={featuredProducts}
+              products={showcaseProducts}
               onAddToCart={handleAddToCart}
               onToggleWishlist={handleToggleWishlist}
             />
