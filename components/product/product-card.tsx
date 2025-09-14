@@ -145,9 +145,9 @@ export function ProductCard({ product, onAddToCart, onToggleWishlist, compact = 
             </h3>
           </Link>
 
-          {/* Description: hide on small, 1 line md, 2 lines lg */}
-          {product.short_description && (
-            <p className={`${descText} text-gray-600 line-clamp-1 lg:line-clamp-2`}>{product.short_description}</p>
+          {/* Description removed in compact mode (including desktop) to reduce card height */}
+          {!compact && product.short_description && (
+            <p className={`${descText} text-gray-600 line-clamp-2`}>{product.short_description}</p>
           )}
 
           {/* Rating placeholder (hide on small to save height) */}
