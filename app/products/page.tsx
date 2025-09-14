@@ -5,6 +5,7 @@ import { ProductGrid } from "@/components/product/product-grid"
 import { ProductGridSkeleton } from "@/components/product/product-loading"
 import { ProductSearch } from "@/components/product/product-search"
 import { Button } from "@/components/ui/button"
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { useCategories } from "@/lib/hooks/use-categories"
 import type { ProductWithCategory } from "@/lib/types/database"
 import { Filter } from "lucide-react"
@@ -296,99 +297,94 @@ export default function ProductsPage() {
           )}
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-8">
-          {/* Filters Sidebar */}
-          <div className="lg:w-72 flex-shrink-0">
-            <div className="lg:hidden mb-4">
-              <Button variant="outline" onClick={() => setShowFilters(!showFilters)} className="w-full justify-start">
-                <Filter className="h-4 w-4 mr-2" />
-                Filtres
-              </Button>
+        {/* Toolbar: count, sort, page size, filters button */}
+        <div className="mb-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+          <p className="text-gray-600">
+            {loading ? "Chargement..." : `${total.toLocaleString()} produit(s) • Page ${page}/${totalPages}`}
+          </p>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <label className="text-sm text-gray-600">Trier</label>
+              <select
+                value={filters.sortBy}
+                onChange={(e) => handleSortChange(e.target.value as ProductFiltersType["sortBy"])}
+                className="h-9 rounded-md border border-gray-300 px-2 text-sm"
+              >
+                <option value="newest">Nouveautés</option>
+                <option value="oldest">Plus anciens</option>
+                <option value="price-asc">Prix croissant</option>
+                <option value="price-desc">Prix décroissant</option>
+                <option value="name">Nom (A→Z)</option>
+              </select>
             </div>
+            <div className="flex items-center gap-2">
+              <label className="text-sm text-gray-600">Par page</label>
+              <select
+                value={pageSize}
+                onChange={(e) => handlePageSizeChange(Number(e.target.value))}
+                className="h-9 rounded-md border border-gray-300 px-2 text-sm"
+              >
+                <option value={12}>12</option>
+                <option value={24}>24</option>
+                <option value={36}>36</option>
+                <option value={48}>48</option>
+              </select>
+            </div>
+            <Button variant="outline" onClick={() => setShowFilters(true)}>
+              <Filter className="h-4 w-4 mr-2" />
+              Filtres
+            </Button>
+          </div>
+        </div>
 
-            <div className={`${showFilters ? "block" : "hidden"} lg:block`}>
+        {/* Products Grid */}
+        <div className="flex-1">
+          {loading ? (
+            <ProductGridSkeleton />
+          ) : (
+            <>
+              <ProductGrid
+                products={items}
+                onAddToCart={handleAddToCart}
+                onToggleWishlist={handleToggleWishlist}
+                compact={true}
+              />
+              {/* Mobile pagination */}
+              <div className="mt-6 flex md:hidden items-center justify-between">
+                <Button variant="outline" size="sm" disabled={page <= 1 || loading} onClick={prevPage}>
+                  Précédent
+                </Button>
+                <span className="text-sm text-gray-600">
+                  {page}/{totalPages}
+                </span>
+                <Button size="sm" disabled={page >= totalPages || loading} onClick={nextPage}>
+                  Suivant
+                </Button>
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Filters Sheet (instead of static sidebar) */}
+        <Sheet open={showFilters} onOpenChange={setShowFilters}>
+          <SheetContent side="left" className="w-[88vw] sm:w-[420px] p-0">
+            <SheetHeader className="px-6 py-4 border-b">
+              <SheetTitle>Filtres</SheetTitle>
+            </SheetHeader>
+            <div className="p-6 overflow-y-auto h-[calc(100vh-64px)]">
               {!categoriesLoading && (
                 <ProductFilters
                   categories={categories}
-                  onFiltersChange={handleFiltersChange}
+                  onFiltersChange={(f) => {
+                    handleFiltersChange(f)
+                  }}
                   isOpen={true}
-                  onToggle={() => setShowFilters(!showFilters)}
+                  onToggle={() => setShowFilters(false)}
                 />
               )}
             </div>
-          </div>
-
-          {/* Products Grid */}
-          <div className="flex-1">
-            <div className="mb-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-              <p className="text-gray-600">
-                {loading ? "Chargement..." : `${total.toLocaleString()} produit(s) • Page ${page}/${totalPages}`}
-              </p>
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2">
-                  <label className="text-sm text-gray-600">Trier</label>
-                  <select
-                    value={filters.sortBy}
-                    onChange={(e) => handleSortChange(e.target.value as ProductFiltersType["sortBy"])}
-                    className="h-9 rounded-md border border-gray-300 px-2 text-sm"
-                  >
-                    <option value="newest">Nouveautés</option>
-                    <option value="oldest">Plus anciens</option>
-                    <option value="price-asc">Prix croissant</option>
-                    <option value="price-desc">Prix décroissant</option>
-                    <option value="name">Nom (A→Z)</option>
-                  </select>
-                </div>
-                <div className="flex items-center gap-2">
-                  <label className="text-sm text-gray-600">Par page</label>
-                  <select
-                    value={pageSize}
-                    onChange={(e) => handlePageSizeChange(Number(e.target.value))}
-                    className="h-9 rounded-md border border-gray-300 px-2 text-sm"
-                  >
-                    <option value={12}>12</option>
-                    <option value={24}>24</option>
-                    <option value={36}>36</option>
-                    <option value={48}>48</option>
-                  </select>
-                </div>
-                <div className="hidden md:flex items-center gap-2">
-                  <Button variant="outline" size="sm" disabled={page <= 1 || loading} onClick={prevPage}>
-                    Précédent
-                  </Button>
-                  <Button size="sm" disabled={page >= totalPages || loading} onClick={nextPage}>
-                    Suivant
-                  </Button>
-                </div>
-              </div>
-            </div>
-
-            {loading ? (
-              <ProductGridSkeleton />
-            ) : (
-              <>
-                <ProductGrid
-                  products={items}
-                  onAddToCart={handleAddToCart}
-                  onToggleWishlist={handleToggleWishlist}
-                  compact={true}
-                />
-                {/* Mobile pagination */}
-                <div className="mt-6 flex md:hidden items-center justify-between">
-                  <Button variant="outline" size="sm" disabled={page <= 1 || loading} onClick={prevPage}>
-                    Précédent
-                  </Button>
-                  <span className="text-sm text-gray-600">
-                    {page}/{totalPages}
-                  </span>
-                  <Button size="sm" disabled={page >= totalPages || loading} onClick={nextPage}>
-                    Suivant
-                  </Button>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
+          </SheetContent>
+        </Sheet>
       </div>
     </div>
   )
