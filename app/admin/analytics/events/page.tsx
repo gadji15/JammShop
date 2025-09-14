@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Download, RefreshCw, Search } from "lucide-react"
+import { Download, RefreshCw, Search, ChevronDown, ChevronUp, Clipboard } from "lucide-react"
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts"
 
 type AnalyticsEvent = {
   id: string
@@ -37,6 +38,10 @@ function toCSV(rows: string[][]) {
   return rows.map((r) => r.map(esc).join(",")).join("\n")
 }
 
+function formatDay(d: Date) {
+  return d.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" })
+}
+
 export default function AdminAnalyticsEventsPage() {
   const [events, setEvents] = useState<AnalyticsEvent[]>([])
   const [nameFilter, setNameFilter] = useState("")
@@ -45,6 +50,10 @@ export default function AdminAnalyticsEventsPage() {
   const [pageSize, setPageSize] = useState(20)
   const [total, setTotal] = useState(0)
   const totalPages = useMemo(() => Math.max(1, Math.ceil(total / pageSize)), [total, pageSize])
+
+  // client-side sorting
+  const [sortKey, setSortKey] = useState<"created_at" | "name" | "user_id" | "ip">("created_at")
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc")
 
   const fetchEvents = async (opts?: { page?: number; pageSize?: number; name?: string }) => {
     const p = opts?.page ?? page
@@ -146,6 +155,76 @@ export default function AdminAnalyticsEventsPage() {
     }
   }
 
+  // aggregated chart data: last 7 days by top event names (others grouped)
+  const chartData = useMemo(() => {
+    const days: { label: string; date: Date }[] = []
+    const today = new Date()
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(today)
+      d.setDate(today.getDate() - i)
+      days.push({ label: formatDay(d), date: new Date(d.getFullYear(), d.getMonth(), d.getDate()) })
+    }
+    // count by name
+    const countsByName = new Map<string, number>()
+    events.forEach((e) => countsByName.set(e.name, (countsByName.get(e.name) || 0) + 1))
+    const topNames = Array.from(countsByName.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
+      .map(([n]) => n)
+    // build series
+    return days.map((d) => {
+      const row: any = { day: d.label }
+      const start = d.date.getTime()
+      const end = start + 24 * 60 * 60 * 1000
+      let other = 0
+      for (const e of events) {
+        const t = new Date(e.created_at).getTime()
+        if (t >= start && t < end) {
+          if (topNames.includes(e.name)) {
+            row[e.name] = (row[e.name] || 0) + 1
+          } else {
+            other += 1
+          }
+        }
+      }
+      row.Autres = other
+      return row
+    })
+  }, [events])
+
+  const sortedEvents = useMemo(() => {
+    const copy = [...events]
+    copy.sort((a, b) => {
+      let av: any = a[sortKey] as any
+      let bv: any = b[sortKey] as any
+      if (sortKey === "created_at") {
+        av = new Date(a.created_at).getTime()
+        bv = new Date(b.created_at).getTime()
+      } else {
+        av = av || ""
+        bv = bv || ""
+      }
+      const cmp = av < bv ? -1 : av > bv ? 1 : 0
+      return sortDir === "asc" ? cmp : -cmp
+    })
+    return copy
+  }, [events, sortKey, sortDir])
+
+  const toggleSort = (key: typeof sortKey) => {
+    if (sortKey === key) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"))
+    } else {
+      setSortKey(key)
+      setSortDir("asc")
+    }
+  }
+
+  const copyProps = async (e: AnalyticsEvent) => {
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(e.props ?? {}, null, 2))
+    } catch {}
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -168,6 +247,32 @@ export default function AdminAnalyticsEventsPage() {
           </Button>
         </div>
       </div>
+
+      {/* Chart last 7 days by top event names */}
+      <Card>
+        <CardHeader>
+          <CardTitle>7 derniers jours par type d’événement</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-72">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="day" />
+                <YAxis allowDecimals={false} />
+                <Tooltip />
+                <Legend />
+                {chartData.length > 0 &&
+                  Object.keys(chartData[0])
+                    .filter((k) => k !== "day")
+                    .map((key, idx) => (
+                      <Bar key={key} dataKey={key} stackId="a" fill={["#3B82F6", "#10B981", "#F59E0B", "#9CA3AF"][idx % 4]} />
+                    ))}
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
@@ -224,10 +329,30 @@ export default function AdminAnalyticsEventsPage() {
             <table className="min-w-full text-sm">
               <thead>
                 <tr className="text-left text-gray-600 border-b">
-                  <th className="py-2 pr-4">Date</th>
-                  <th className="py-2 pr-4">Event</th>
-                  <th className="py-2 pr-4">User</th>
-                  <th className="py-2 pr-4">IP</th>
+                  <th className="py-2 pr-4 cursor-pointer select-none" onClick={() => toggleSort("created_at")}>
+                    Date
+                    {sortKey === "created_at" ? (
+                      sortDir === "asc" ? <ChevronUp className="inline h-4 w-4 ml-1" /> : <ChevronDown className="inline h-4 w-4 ml-1" />
+                    ) : null}
+                  </th>
+                  <th className="py-2 pr-4 cursor-pointer select-none" onClick={() => toggleSort("name")}>
+                    Event
+                    {sortKey === "name" ? (
+                      sortDir === "asc" ? <ChevronUp className="inline h-4 w-4 ml-1" /> : <ChevronDown className="inline h-4 w-4 ml-1" />
+                    ) : null}
+                  </th>
+                  <th className="py-2 pr-4 cursor-pointer select-none" onClick={() => toggleSort("user_id")}>
+                    User
+                    {sortKey === "user_id" ? (
+                      sortDir === "asc" ? <ChevronUp className="inline h-4 w-4 ml-1" /> : <ChevronDown className="inline h-4 w-4 ml-1" />
+                    ) : null}
+                  </th>
+                  <th className="py-2 pr-4 cursor-pointer select-none" onClick={() => toggleSort("ip")}>
+                    IP
+                    {sortKey === "ip" ? (
+                      sortDir === "asc" ? <ChevronUp className="inline h-4 w-4 ml-1" /> : <ChevronDown className="inline h-4 w-4 ml-1" />
+                    ) : null}
+                  </th>
                   <th className="py-2 pr-4">UA</th>
                   <th className="py-2 pr-4">Props</th>
                 </tr>
@@ -256,14 +381,14 @@ export default function AdminAnalyticsEventsPage() {
                       </td>
                     </tr>
                   ))
-                ) : events.length === 0 ? (
+                ) : sortedEvents.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="py-6 text-center text-gray-500">
                       Aucun événement trouvé
                     </td>
                   </tr>
                 ) : (
-                  events.map((e) => (
+                  sortedEvents.map((e) => (
                     <tr key={e.id} className="border-b align-top">
                       <td className="py-2 pr-4 whitespace-nowrap">
                         {new Date(e.created_at).toLocaleString()}
@@ -281,9 +406,14 @@ export default function AdminAnalyticsEventsPage() {
                         </div>
                       </td>
                       <td className="py-2 pr-4">
-                        <pre className="max-w-lg whitespace-pre-wrap break-words text-xs bg-gray-50 p-2 rounded">
-                          {JSON.stringify(e.props ?? {}, null, 2)}
-                        </pre>
+                        <div className="flex items-start gap-2">
+                          <pre className="max-w-lg whitespace-pre-wrap break-words text-xs bg-gray-50 p-2 rounded">
+                            {JSON.stringify(e.props ?? {}, null, 2)}
+                          </pre>
+                          <Button variant="outline" size="icon" className="h-8 w-8 shrink-0" onClick={() => copyProps(e)} title="Copier JSON">
+                            <Clipboard className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   ))
