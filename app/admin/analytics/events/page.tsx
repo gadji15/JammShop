@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Download, RefreshCw, Search, ChevronDown, ChevronUp, Clipboard } from "lucide-react"
+import { Download, RefreshCw, Search, ChevronDown, ChevronUp, Clipboard, Trash2 } from "lucide-react"
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts"
 
 type AnalyticsEvent = {
@@ -45,6 +45,8 @@ function formatDay(d: Date) {
 export default function AdminAnalyticsEventsPage() {
   const [events, setEvents] = useState<AnalyticsEvent[]>([])
   const [nameFilter, setNameFilter] = useState("")
+  const [namesMulti, setNamesMulti] = useState<string[]>([])
+  const [multiNamesText, setMultiNamesText] = useState<string>("")
   const [userFilter, setUserFilter] = useState("")
   const [ipFilter, setIpFilter] = useState("")
   const [period, setPeriod] = useState<"7" | "30" | "90">("7")
@@ -60,12 +62,13 @@ export default function AdminAnalyticsEventsPage() {
   const [sortKey, setSortKey] = useState<"created_at" | "name" | "user_id" | "ip">("created_at")
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc")
 
-  const fetchEvents = async (opts?: { page?: number; pageSize?: number; name?: string; user_id?: string; ip?: string; start?: string; end?: string }) => {
+  const fetchEvents = async (opts?: { page?: number; pageSize?: number; name?: string; user_id?: string; ip?: string; start?: string; end?: string; namesCsv?: string }) => {
     const p = opts?.page ?? page
     const ps = opts?.pageSize ?? pageSize
     const n = (opts?.name ?? nameFilter).trim()
     const u = (opts?.user_id ?? userFilter).trim()
     const ipv = (opts?.ip ?? ipFilter).trim()
+    const namesCsv = opts?.namesCsv ?? (namesMulti.length > 0 ? namesMulti.join(",") : "")
 
     // period handling
     let start = opts?.start ?? ""
@@ -79,7 +82,8 @@ export default function AdminAnalyticsEventsPage() {
     }
 
     const params = new URLSearchParams({ page: String(p), pageSize: String(ps) })
-    if (n) params.set("name", n)
+    if (namesCsv) params.set("names", namesCsv)
+    else if (n) params.set("name", n)
     if (u) params.set("user_id", u)
     if (ipv) params.set("ip", ipv)
     if (start) params.set("start", start)
@@ -265,9 +269,33 @@ export default function AdminAnalyticsEventsPage() {
             <Download className="h-4 w-4 mr-2" />
             Export page
           </Button>
-          <Button size="sm" onClick={exportAllCSV}>
+          <Button variant="outline" size="sm" onClick={exportAllCSV}>
             <Download className="h-4 w-4 mr-2" />
             Export tout
+          </Button>
+          <Button
+            size="sm"
+            className="bg-red-600 hover:bg-red-700"
+            onClick={async () => {
+              if (!confirm("Confirmer la purge des événements (filtrés si des filtres sont actifs) ?")) return
+              const params = new URLSearchParams()
+              if (namesMulti.length > 0) params.set("names", namesMulti.join(","))
+              else if (nameFilter.trim()) params.set("name", nameFilter.trim())
+              try {
+                const res = await fetch(`/api/analytics?${params.toString()}`, { method: "DELETE" })
+                const ok = res.ok
+                if (ok) {
+                  setPage(1)
+                  fetchEvents({ page: 1 })
+                }
+              } catch (e) {
+                console.error(e)
+              }
+            }}
+            title="Purger les événements"
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            Purger
           </Button>
         </div>
       </div>
@@ -358,6 +386,34 @@ export default function AdminAnalyticsEventsPage() {
                 onChange={(e) => setCustomEnd(e.target.value)}
                 placeholder="Fin personnalisée"
               />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="md:col-span-2">
+                <Input
+                  value={multiNamesText}
+                  onChange={(e) => setMultiNamesText(e.target.value)}
+                  placeholder="Filtrer par plusieurs événements (séparés par des virgules)"
+                />
+                <div className="text-xs text-gray-500 mt-1">Ex: hero_view,hero_search,hero_cta_products</div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setNamesMulti(multiNamesText.split(",").map((s) => s.trim()).filter(Boolean))}
+                >
+                  Appliquer multi-events
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setNamesMulti([])
+                    setMultiNamesText("")
+                  }}
+                >
+                  Effacer multi
+                </Button>
+              </div>
             </div>
 
             <div className="flex items-center gap-2 justify-between">

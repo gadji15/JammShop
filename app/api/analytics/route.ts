@@ -58,6 +58,7 @@ export async function GET(req: Request) {
   const page = Math.max(1, Number(searchParams.get("page") || "1"))
   const pageSize = Math.min(100, Math.max(1, Number(searchParams.get("pageSize") || "20")))
   const name = searchParams.get("name") || undefined
+  const namesCsv = searchParams.get("names") || undefined
   const userId = searchParams.get("user_id") || undefined
   const ip = searchParams.get("ip") || undefined
   const start = searchParams.get("start") || undefined
@@ -72,7 +73,12 @@ export async function GET(req: Request) {
     .order("created_at", { ascending: false })
     .range(from, to)
 
-  if (name) qb = qb.eq("name", name)
+  if (namesCsv) {
+    const arr = namesCsv.split(",").map((s) => s.trim()).filter(Boolean)
+    if (arr.length > 0) qb = qb.in("name", arr)
+  } else if (name) {
+    qb = qb.eq("name", name)
+  }
   if (userId) qb = qb.eq("user_id", userId)
   if (ip) qb = qb.eq("ip", ip)
   if (start) qb = qb.gte("created_at", start)
@@ -111,12 +117,17 @@ export async function DELETE(req: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }
 
-  // Optional filter by name
   const { searchParams } = new URL(req.url)
   const name = searchParams.get("name") || undefined
+  const namesCsv = searchParams.get("names") || undefined
 
   let qb = supabase.from("analytics_events").delete()
-  if (name) qb = qb.eq("name", name)
+  if (namesCsv) {
+    const arr = namesCsv.split(",").map((s) => s.trim()).filter(Boolean)
+    if (arr.length > 0) qb = qb.in("name", arr)
+  } else if (name) {
+    qb = qb.eq("name", name)
+  }
 
   const { error } = await qb
   if (error) {
