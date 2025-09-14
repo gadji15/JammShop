@@ -9,7 +9,8 @@ import { Card, CardContent } from "@/components/ui/card"
 import { useCategories } from "@/lib/hooks/use-categories"
 import { useShowcaseProducts } from "@/lib/hooks/use-showcase-products"
 import { Carousel, CarouselItem } from "@/components/ui/carousel"
-import { Hero } from "@/components/layout/hero"
+import dynamic from "next/dynamic"
+const HeroDynamic = dynamic(() => import("@/components/layout/hero").then((m) => m.Hero), { ssr: false })
 import { ArrowRight, Package, Shield, Truck } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
@@ -111,7 +112,7 @@ export default function HomePage() {
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
       <section className="relative bg-black text-white">
-        <Hero />
+        <HeroDynamic />
       </section>
 
       {/* Categories Section */}
