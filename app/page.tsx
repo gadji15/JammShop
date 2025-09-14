@@ -88,7 +88,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Categories Section (moved above features) */}
+      {/* Categories Section */}
       <section className="py-20 bg-gradient-to-b from-white to-gray-50">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
@@ -161,7 +161,65 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Features Section (moved below categories) */}
+      {/* Featured Products Section (just after categories with improved UI) */}
+      <section className="relative py-20 bg-gradient-to-b from-gray-50 to-white">
+        <div className="pointer-events-none absolute inset-0 [mask-image:radial-gradient(70%_60%_at_50%_0%,black,transparent)]">
+          <div className="absolute -top-24 left-1/2 h-56 w-[80%] -translate-x-1/2 rounded-full bg-blue-200/30 blur-3xl"></div>
+        </div>
+
+        <div className="relative container mx-auto px-4">
+          <div className="flex flex-col gap-4 items-center text-center mb-12">
+            <div className="flex items-center gap-3">
+              <Badge variant="secondary" className="bg-blue-100 text-blue-800 px-3 py-1">
+                Produits vedettes
+              </Badge>
+              <span className="text-sm text-gray-500">Mis à jour aujourd'hui</span>
+            </div>
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 text-balance">
+              Notre sélection <span className="text-blue-600">incontournable</span>
+            </h2>
+            <p className="text-lg text-gray-600 max-w-2xl">
+              Des best-sellers et nouveautés triés pour vous. Qualité, prix et disponibilité au rendez-vous.
+            </p>
+
+            <div className="mt-2 flex items-center gap-2">
+              <Button asChild variant="outline" size="sm" className="bg-transparent">
+                <Link href="/products">Nouveautés</Link>
+              </Button>
+              <Button asChild variant="outline" size="sm" className="bg-transparent">
+                <Link href="/products">Meilleures ventes</Link>
+              </Button>
+              <Button asChild size="sm" className="bg-blue-600 hover:bg-blue-700">
+                <Link href="/products">
+                  Tout voir
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+            </div>
+          </div>
+
+          {productsLoading ? (
+            <ProductGridSkeleton count={8} />
+          ) : (
+            <ProductGrid
+              products={featuredProducts}
+              onAddToCart={handleAddToCart}
+              onToggleWishlist={handleToggleWishlist}
+            />
+          )}
+
+          <div className="text-center mt-12">
+            <Button asChild size="lg" className="bg-blue-600 hover:bg-blue-700">
+              <Link href="/products">
+                Voir tous les produits
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Link>
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* Features Section */}
       <section className="py-16 bg-gray-50">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -194,40 +252,6 @@ export default function HomePage() {
                 <p className="text-gray-600">30 jours pour changer d'avis, retour gratuit</p>
               </CardContent>
             </Card>
-          </div>
-        </div>
-      </section>
-
-      {/* Featured Products Section */}
-      <section className="py-16 bg-gray-50">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between mb-12">
-            <div>
-              <h2 className="text-3xl font-bold text-gray-900 mb-2">Produits vedettes</h2>
-              <p className="text-lg text-gray-600">Découvrez notre sélection de produits populaires</p>
-            </div>
-            <Badge variant="secondary" className="bg-blue-100 text-blue-800 px-3 py-1">
-              Nouveautés
-            </Badge>
-          </div>
-
-          {productsLoading ? (
-            <ProductGridSkeleton count={8} />
-          ) : (
-            <ProductGrid
-              products={featuredProducts}
-              onAddToCart={handleAddToCart}
-              onToggleWishlist={handleToggleWishlist}
-            />
-          )}
-
-          <div className="text-center mt-12">
-            <Button asChild size="lg" className="bg-blue-600 hover:bg-blue-700">
-              <Link href="/products">
-                Voir tous les produits
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Link>
-            </Button>
           </div>
         </div>
       </section>
