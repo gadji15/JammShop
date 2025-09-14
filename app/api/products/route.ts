@@ -14,6 +14,7 @@ export async function GET(req: Request) {
   const maxPrice = Number(searchParams.get("maxPrice") || "0")
   const inStock = ["1", "true", "yes"].includes((searchParams.get("inStock") || "").toLowerCase())
   const featured = ["1", "true", "yes"].includes((searchParams.get("featured") || "").toLowerCase())
+  const onSale = ["1", "true", "yes"].includes((searchParams.get("onSale") || "").toLowerCase())
   const sort = searchParams.get("sort") || "newest"
   const page = Math.max(1, Number(searchParams.get("page") || "1"))
   const pageSize = Math.min(60, Math.max(1, Number(searchParams.get("pageSize") || "20")))
@@ -46,6 +47,7 @@ export async function GET(req: Request) {
   if (maxPrice > 0) qb = qb.lte("price", maxPrice)
   if (inStock) qb = qb.gt("stock_quantity", 0)
   if (featured) qb = qb.eq("is_featured", true)
+  // Note: onSale filter will be applied after fetch (column-to-column comparison price < compare_price)
 
   // Sorting
   switch (sort) {
@@ -67,17 +69,23 @@ export async function GET(req: Request) {
       break
   }
 
+  // Execute base query
   const { data, count, error } = await qb.range(from, to)
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
+  // If onSale requested, filter in memory since column-to-column comparison isn't native in builder
+  const filtered = onSale
+    ? (data || []).filter((p: any) => typeof p.compare_price === "number" && typeof p.price === "number" && p.compare_price > p.price)
+    : data || []
+
   return NextResponse.json({
-    data: data || [],
+    data: filtered,
     page,
     pageSize,
-    total: count ?? 0,
-    totalPages: Math.ceil((count ?? 0) / pageSize),
+    total: onSale ? filtered.length : count ?? 0,
+    totalPages: Math.ceil((onSale ? filtered.length : count ?? 0) / pageSize),
   })
 }
