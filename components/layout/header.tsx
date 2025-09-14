@@ -157,12 +157,24 @@ export function Header() {
             {/* Right Actions */}
             <div className="flex items-center space-x-1 sm:space-x-2 ml-2 sm:ml-4">
               {isAdmin && (
-                <Button variant="ghost" size="icon" asChild className="hidden sm:flex hover:bg-blue-50">
-                  <Link href="/admin">
-                    <Settings className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
-                    <span className="sr-only">Administration</span>
-                  </Link>
-                </Button>
+                <>
+                  <Button variant="ghost" size="icon" asChild className="hidden sm:flex hover:bg-blue-50">
+                    <Link href="/admin">
+                      <Settings className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
+                      <span className="sr-only">Administration</span>
+                    </Link>
+                  </Button>
+
+                  {/* Quick link to analytics events */}
+                  <Button variant="ghost" size="icon" asChild className="hidden sm:flex hover:bg-blue-50">
+                    <Link href="/admin/analytics/events" title="Analytics Events">
+                      <svg width="20" height="20" viewBox="0 0 24 24" className="text-blue-600">
+                        <path fill="currentColor" d="M5 3h2v18H5V3Zm6 6h2v12h-2V9Zm6 4h2v8h-2v-8Z"/>
+                      </svg>
+                      <span className="sr-only">Analytics Events</span>
+                    </Link>
+                  </Button>
+                </>
               )}
 
               {/* Wishlist */}
