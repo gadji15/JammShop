@@ -11,7 +11,11 @@ import { ArrowRight, Search, Shield, Truck, Package, Sparkles } from "lucide-rea
 import { useCategories } from "@/lib/hooks/use-categories"
 import { cn } from "@/lib/utils"
 
-export function Hero() {
+type HeroProps = {
+  forcedVariant?: "hero1" | "hero2"
+}
+
+export function Hero({ forcedVariant }: HeroProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { categories } = useCategories()
@@ -83,26 +87,27 @@ export function Hero() {
   const mobileBg =
     "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?q=80&w=1200&auto=format&fit=crop"
 
-  // A/B test lightweight: query param ?ab=hero2 or persisted session choice
-  const variant = useMemo(() => {
+  // Variant selection: if forcedVariant provided, use it; otherwise fall back to param/session (client-only)
+  const variant = useMemo<"hero1" | "hero2">(() => {
+    if (forcedVariant === "hero1" || forcedVariant === "hero2") return forcedVariant
     const param = searchParams?.get("ab")
     if (param === "hero2" || param === "hero1") return param
     if (typeof window !== "undefined") {
       const stored = sessionStorage.getItem("heroVariant")
-      if (stored === "hero2" || stored === "hero1") return stored
+      if (stored === "hero2" || stored === "hero1") return stored as "hero1" | "hero2"
       const picked = Math.random() < 0.5 ? "hero1" : "hero2"
       sessionStorage.setItem("heroVariant", picked)
       return picked
     }
     return "hero1"
-  }, [searchParams])
+  }, [forcedVariant, searchParams])
 
   // fire view event
   useEffect(() => {
     track("hero_view", { variant })
   }, [variant])
 
-  // Video behavior: pause on hidden tab or reduced motion
+  // Video behavior: pause on hidden tab or reduced motion (doesn't alter initial HTML)
   useEffect(() => {
     const video = videoRef.current
     if (!video) return

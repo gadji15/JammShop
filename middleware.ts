@@ -14,6 +14,20 @@ export async function middleware(request: NextRequest) {
   // Always refresh session cookies first
   let response = await updateSession(request)
 
+  // A/B cookie for Hero: set once if missing (deterministic on first visit per user)
+  const ab = request.cookies.get("ab_variant")?.value
+  if (!ab || (ab !== "hero1" && ab !== "hero2")) {
+    const picked = Math.random() < 0.5 ? "hero1" : "hero2"
+    // ensure we have a response instance to set cookies on
+    response = response ?? NextResponse.next({ request })
+    response.cookies.set("ab_variant", picked, {
+      path: "/",
+      httpOnly: false,
+      sameSite: "lax",
+      maxAge: 60 * 60 * 24 * 180, // 180 days
+    })
+  }
+
   const { pathname } = request.nextUrl
 
   // Guard only for /admin paths

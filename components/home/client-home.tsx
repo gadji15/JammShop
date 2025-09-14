@@ -1,19 +1,103 @@
-import { cookies } from "next/headers"
-import { Hero } from "@/components/layout/hero"
-import ClientHome from "@/components/home/client-home"
+"use client"
 
-export default async function HomePage() {
-  // Server-side: pick the A/B variant from cookie set by middleware
-  const cookieStore = cookies()
-  const variant = (cookieStore.get("ab_variant")?.value === "hero2" ? "hero2" : "hero1") as "hero1" | "hero2"
+import React, { useEffect, useState } from "react"
+import { ProductGrid } from "@/components/product/product-grid"
+import { ProductGridSkeleton } from "@/components/product/product-loading"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
+import { useCategories } from "@/lib/hooks/use-categories"
+import { useShowcaseProducts } from "@/lib/hooks/use-showcase-products"
+import { Carousel, CarouselItem } from "@/components/ui/carousel"
+import { ArrowRight, Package, Shield, Truck } from "lucide-react"
+import Image from "next/image"
+import Link from "next/link"
+
+function FeaturedProducts() {
+  const { products: showcaseProducts, loading: showcaseLoading, filter, setFilter } = useShowcaseProducts("featured")
+  const [compact, setCompact] = useState(true)
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("homeFeaturedView")
+      if (stored === "comfortable") setCompact(false)
+      else setCompact(true)
+    } catch {
+      setCompact(true)
+    }
+  }, [])
+
+  const toggleView = () => {
+    const next = !compact
+    setCompact(next)
+    try {
+      localStorage.setItem("homeFeaturedView", next ? "compact" : "comfortable")
+    } catch {}
+  }
+
+  const handleAddToCart = async (productId: string) => {
+    console.log("Add to cart:", productId)
+  }
+
+  const handleToggleWishlist = async (productId: string) => {
+    console.log("Toggle wishlist:", productId)
+  }
+
+  if (showcaseLoading) {
+    return <ProductGridSkeleton count={8} />
+  }
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Hero Section (SSR deterministic) */}
-      <section className="relative bg-black text-white">
-        <Hero forcedVariant={variant} />
-      </section>
+    <>
+      <div className="flex flex-col items-center gap-3 mb-6">
+        <div className="flex items-center gap-2">
+          <Button
+            variant={filter === "new" ? undefined : "outline"}
+            size="sm"
+            className={filter === "new" ? "bg-blue-600 hover:bg-blue-700 text-white" : "bg-transparent"}
+            onClick={() => setFilter("new")}
+          >
+            Nouveautés
+          </Button>
+          <Button
+            variant={filter === "best" ? undefined : "outline"}
+            size="sm"
+            className={filter === "best" ? "bg-blue-600 hover:bg-blue-700 text-white" : "bg-transparent"}
+            onClick={() => setFilter("best")}
+          >
+            Meilleures ventes
+          </Button>
+          <Button
+            variant={filter === "featured" ? undefined : "outline"}
+            size="sm"
+            className={filter === "featured" ? "bg-blue-600 hover:bg-blue-700 text-white" : "bg-transparent"}
+            onClick={() => setFilter("featured")}
+          >
+            Tout voir
+            <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
+        </div>
+        <div className="flex items-center justify-center">
+          <Button variant={compact ? "secondary" : "outline"} size="sm" onClick={toggleView}>
+            {compact ? "Affichage compact" : "Affichage confortable"}
+          </Button>
+        </div>
+      </div>
+      <ProductGrid
+        products={showcaseProducts}
+        onAddToCart={handleAddToCart}
+        onToggleWishlist={handleToggleWishlist}
+        compact={compact}
+      />
+    </>
+  )
+}
 
+export default function ClientHome() {
+  const { categories, loading: categoriesLoading } = useCategories()
+
+  return (
+    <>
       {/* Categories Section */}
       <section className="py-14 md:py-20 bg-gradient-to-b from-white to-gray-50">
         <div className="container mx-auto px-4 relative">
@@ -135,7 +219,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Featured Products Section (just after categories with improved UI) */}
+      {/* Featured Products Section */}
       <section className="relative py-16 md:py-20 bg-gradient-to-b from-gray-50 to-white">
         <div className="pointer-events-none absolute inset-0 [mask-image:radial-gradient(70%_60%_at_50%_0%,black,transparent)]">
           <div className="absolute -top-24 left-1/2 h-56 w-[80%] -translate-x-1/2 rounded-full bg-blue-200/30 blur-3xl"></div>
@@ -165,8 +249,6 @@ export default async function HomePage() {
             <p className="text-base md:text-lg text-gray-600 max-w-2xl">
               Des best-sellers et nouveautés triés pour vous. Qualité, prix et disponibilité au rendez-vous.
             </p>
-
-            
           </div>
 
           <FeaturedProducts />
@@ -199,7 +281,7 @@ export default async function HomePage() {
 
             <Card className="min-w-[220px] snap-start text-center border-0 shadow-lg">
               <CardContent className="p-6">
-                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <div className="w-12 h-12 bg-green-100 rounded-full flex items_center justify-center mx-auto mb-3">
                   <Shield className="h-7 w-7 text-green-600" />
                 </div>
                 <h3 className="text-lg font-semibold mb-1.5">Paiement sécurisé</h3>
@@ -209,7 +291,7 @@ export default async function HomePage() {
 
             <Card className="min-w-[220px] snap-start text-center border-0 shadow-lg">
               <CardContent className="p-6">
-                <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx_auto mb-3">
                   <Package className="h-7 w-7 text-purple-600" />
                 </div>
                 <h3 className="text-lg font-semibold mb-1.5">Retour gratuit</h3>
@@ -280,6 +362,6 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
-    </div>
+    </>
   )
 }
