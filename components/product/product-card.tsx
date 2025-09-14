@@ -44,31 +44,31 @@ export function ProductCard({ product, onAddToCart, onToggleWishlist, compact = 
     ? Math.round(((product.compare_price - product.price) / product.compare_price) * 100)
     : 0
 
-  // More aggressive responsive reductions only on small screens; restore original on desktop
-  const badgeTextSize = compact ? "text-[9px] md:text-xs" : "text-[10px] md:text-xs"
-  const wishBtnSize = compact ? "h-6 w-6 md:h-8 md:w-8" : "h-7 w-7 md:h-8 md:w-8"
-  const wishIconSize = compact ? "h-3 w-3 md:h-4 md:w-4" : "h-3.5 w-3.5 md:h-4 md:w-4"
+  // Ultra-compact white band in compact mode; standard sizes otherwise
+  const badgeTextSize = compact ? "text-[9px] md:text-[10px]" : "text-[10px] md:text-xs"
+  const wishBtnSize = compact ? "h-6 w-6 md:h-7 md:w-7" : "h-7 w-7 md:h-8 md:w-8"
+  const wishIconSize = compact ? "h-3 w-3 md:h-3.5 md:w-3.5" : "h-3.5 w-3.5 md:h-4 md:w-4"
 
-  // Shrink the white band height on small screens; revert to original on md+
-  const contentPadding = compact ? "p-1.5 sm:p-2 md:p-4" : "p-2 sm:p-3 md:p-4"
-  const spaceY = compact ? "space-y-0.5 sm:space-y-1 md:space-y-2" : "space-y-1 sm:space-y-1.5 md:space-y-2"
+  // White band padding significantly reduced in compact mode across breakpoints
+  const contentPadding = compact ? "p-1 sm:p-1.5 md:p-2" : "p-2 sm:p-3 md:p-4"
+  const spaceY = compact ? "space-y-0.5 md:space-y-1" : "space-y-1 sm:space-y-1.5 md:space-y-2"
 
-  // Hide some metadata on small to reduce height, show fully on md+
-  const categoryText = compact ? "hidden md:inline text-[10px] md:text-xs" : "text-[11px] md:text-xs"
+  // Hide category entirely in compact to save height
+  const categoryText = compact ? "hidden" : "text-[11px] md:text-xs"
 
-  // Title: compact on small, restore desktop scale and 2-line clamp on md+
-  const titleText = compact ? "text-[11px] sm:text-xs md:text-base" : "text-[12px] sm:text-sm md:text-base"
-  const titleClamp = "line-clamp-1 md:line-clamp-2"
+  // Title single-line even on desktop in compact; smaller font
+  const titleText = compact ? "text-[11px] sm:text-xs md:text-sm" : "text-[12px] sm:text-sm md:text-base"
+  const titleClamp = compact ? "line-clamp-1" : "line-clamp-1 md:line-clamp-2"
 
-  // Description: hidden on small; show with original sizing on md+
-  const descText = compact ? "hidden md:block md:text-xs" : "hidden md:block md:text-sm"
-  const starSize = compact ? "h-2.5 w-2.5 md:h-3.5 md:w-3.5" : "h-3 w-3 md:h-3.5 md:w-3.5"
-  const ratingText = compact ? "text-[9px] md:text-xs" : "text-[10px] md:text-xs"
+  // Description controlled elsewhere; keep references here for non-compact
+  const descText = compact ? "hidden" : "hidden md:block md:text-sm"
+  const starSize = compact ? "h-0 w-0 md:h-0 md:w-0" : "h-3 w-3 md:h-3.5 md:w-3.5"
+  const ratingText = compact ? "hidden" : "text-[10px] md:text-xs"
 
-  const footerPadding = compact ? "p-1.5 sm:p-2 md:p-4" : "p-2 sm:p-3 md:p-4"
-  const priceText = compact ? "text-[13px] sm:text-sm md:text-lg" : "text-sm sm:text-base md:text-lg"
-  const comparePriceText = compact ? "text-[10px] sm:text-[11px] md:text-sm" : "text-[11px] sm:text-xs md:text-sm"
-  const stockText = compact ? "hidden md:inline text-[9px] md:text-xs" : "text-[10px] md:text-xs"
+  const footerPadding = compact ? "p-1 sm:p-1.5 md:p-2" : "p-2 sm:p-3 md:p-4"
+  const priceText = compact ? "text-[12px] sm:text-[13px] md:text-sm" : "text-sm sm:text-base md:text-lg"
+  const comparePriceText = compact ? "text-[10px] sm:text-[11px] md:text-xs" : "text-[11px] sm:text-xs md:text-sm"
+  const stockText = compact ? "hidden" : "text-[10px] md:text-xs"
 
   return (
     <Card className="group overflow-hidden transition-all duration-300 hover:shadow-md">
