@@ -45,6 +45,11 @@ function formatDay(d: Date) {
 export default function AdminAnalyticsEventsPage() {
   const [events, setEvents] = useState<AnalyticsEvent[]>([])
   const [nameFilter, setNameFilter] = useState("")
+  const [userFilter, setUserFilter] = useState("")
+  const [ipFilter, setIpFilter] = useState("")
+  const [period, setPeriod] = useState<"7" | "30" | "90">("7")
+  const [customStart, setCustomStart] = useState<string>("")
+  const [customEnd, setCustomEnd] = useState<string>("")
   const [loading, setLoading] = useState(false)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
@@ -55,12 +60,31 @@ export default function AdminAnalyticsEventsPage() {
   const [sortKey, setSortKey] = useState<"created_at" | "name" | "user_id" | "ip">("created_at")
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc")
 
-  const fetchEvents = async (opts?: { page?: number; pageSize?: number; name?: string }) => {
+  const fetchEvents = async (opts?: { page?: number; pageSize?: number; name?: string; user_id?: string; ip?: string; start?: string; end?: string }) => {
     const p = opts?.page ?? page
     const ps = opts?.pageSize ?? pageSize
     const n = (opts?.name ?? nameFilter).trim()
+    const u = (opts?.user_id ?? userFilter).trim()
+    const ipv = (opts?.ip ?? ipFilter).trim()
+
+    // period handling
+    let start = opts?.start ?? ""
+    let end = opts?.end ?? ""
+    if (!start && !end) {
+      const now = new Date()
+      const days = Number(period)
+      const since = new Date(now.getTime() - days * 24 * 60 * 60 * 1000)
+      start = since.toISOString()
+      end = now.toISOString()
+    }
+
     const params = new URLSearchParams({ page: String(p), pageSize: String(ps) })
     if (n) params.set("name", n)
+    if (u) params.set("user_id", u)
+    if (ipv) params.set("ip", ipv)
+    if (start) params.set("start", start)
+    if (end) params.set("end", end)
+
     setLoading(true)
     try {
       const res = await fetch(`/api/analytics?${params.toString()}`, { cache: "no-store" })
@@ -89,7 +113,7 @@ export default function AdminAnalyticsEventsPage() {
 
   const onSearch = () => {
     setPage(1)
-    fetchEvents({ page: 1, pageSize, name: nameFilter })
+    fetchEvents({ page: 1, pageSize, name: nameFilter, user_id: userFilter, ip: ipFilter, start: customStart, end: customEnd })
   }
 
   const exportPageCSV = () => {
@@ -277,47 +301,106 @@ export default function AdminAnalyticsEventsPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between gap-2">
-            <span>Filtre & pagination</span>
+            <span>Filtres, période & pagination</span>
             <Badge variant="secondary" className="bg-blue-100 text-blue-800">
               {total.toLocaleString()} événements
             </Badge>
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col md:flex-row gap-3 md:items-center md:justify-between">
-            <div className="flex items-center gap-2 w-full md:max-w-md">
-              <Search className="h-4 w-4 text-gray-500" />
+          <div className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="flex items-center gap-2">
+                <Search className="h-4 w-4 text-gray-500" />
+                <Input
+                  value={nameFilter}
+                  onChange={(e) => setNameFilter(e.target.value)}
+                  placeholder="Filtrer par nom d'événement (ex: hero_view)"
+                />
+              </div>
               <Input
-                value={nameFilter}
-                onChange={(e) => setNameFilter(e.target.value)}
-                placeholder="Filtrer par nom d'événement (ex: hero_view)"
+                value={userFilter}
+                onChange={(e) => setUserFilter(e.target.value)}
+                placeholder="Filtrer par user_id"
               />
-              <Button onClick={onSearch} disabled={loading}>
-                Rechercher
-              </Button>
+              <Input
+                value={ipFilter}
+                onChange={(e) => setIpFilter(e.target.value)}
+                placeholder="Filtrer par IP"
+              />
             </div>
-            <div className="flex items-center gap-2">
-              <label className="text-sm text-gray-600">Page</label>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="flex items-center gap-3">
+                <label className="text-sm text-gray-600">Période</label>
+                <div className="flex items-center gap-2">
+                  {(["7", "30", "90"] as const).map((p) => (
+                    <Button
+                      key={p}
+                      variant={period === p ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setPeriod(p)}
+                    >
+                      {p}j
+                    </Button>
+                  ))}
+                </div>
+              </div>
               <Input
-                type="number"
-                value={page}
-                onChange={(e) => setPage(Math.max(1, Number(e.target.value || 1)))}
-                className="w-20"
-                min={1}
-                max={totalPages}
+                type="datetime-local"
+                value={customStart}
+                onChange={(e) => setCustomStart(e.target.value)}
+                placeholder="Début personnalisé"
               />
-              <span className="text-sm text-gray-600">/ {totalPages}</span>
-              <label className="text-sm text-gray-600 ml-4">Taille</label>
-              <select
-                value={pageSize}
-                onChange={(e) => setPageSize(Number(e.target.value))}
-                className="h-9 rounded-md border border-gray-300 px-2 text-sm"
-              >
-                <option value={10}>10</option>
-                <option value={20}>20</option>
-                <option value={50}>50</option>
-                <option value={100}>100</option>
-              </select>
+              <Input
+                type="datetime-local"
+                value={customEnd}
+                onChange={(e) => setCustomEnd(e.target.value)}
+                placeholder="Fin personnalisée"
+              />
+            </div>
+
+            <div className="flex items-center gap-2 justify-between">
+              <div className="flex items-center gap-2">
+                <Button onClick={onSearch} disabled={loading}>
+                  Rechercher
+                </Button>
+                <Button variant="outline" onClick={() => {
+                  setNameFilter("")
+                  setUserFilter("")
+                  setIpFilter("")
+                  setCustomStart("")
+                  setCustomEnd("")
+                  setPeriod("7")
+                  setPage(1)
+                  fetchEvents({ page: 1 })
+                }}>
+                  Réinitialiser
+                </Button>
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-gray-600">Page</label>
+                <Input
+                  type="number"
+                  value={page}
+                  onChange={(e) => setPage(Math.max(1, Number(e.target.value || 1)))}
+                  className="w-20"
+                  min={1}
+                  max={totalPages}
+                />
+                <span className="text-sm text-gray-600">/ {totalPages}</span>
+                <label className="text-sm text-gray-600 ml-4">Taille</label>
+                <select
+                  value={pageSize}
+                  onChange={(e) => setPageSize(Number(e.target.value))}
+                  className="h-9 rounded-md border border-gray-300 px-2 text-sm"
+                >
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                </select>
+              </div>
             </div>
           </div>
         </CardContent>
