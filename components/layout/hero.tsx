@@ -314,7 +314,7 @@ export function Hero() {
             <Button
               asChild
               variant="outline"
-              className="text-white border-white/60 hover:bg-white hover:text-blue-700"
+              className="bg-white/90 text-blue-700 border-white/80 hover:bg-white"
               onClick={() => track("hero_cta_register")}
             >
               <Link href="/auth/register">Devenir vendeur</Link>
@@ -323,7 +323,7 @@ export function Hero() {
             <Button
               asChild
               variant="outline"
-              className="hidden md:inline-flex text-white border-white/60 hover:bg-white hover:text-blue-700"
+              className="hidden md:inline-flex bg-white/90 text-blue-700 border-white/80 hover:bg-white"
               onClick={() => track("hero_cta_promos")}
             >
               <Link href="/products?promo=1">
