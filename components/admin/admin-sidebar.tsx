@@ -14,6 +14,7 @@ import {
   ShoppingCart,
   Users,
   Download,
+  Percent,
 } from "lucide-react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
@@ -27,6 +28,7 @@ const navigation = [
   { name: "Commandes", href: "/admin/orders", icon: ShoppingCart },
   { name: "Utilisateurs", href: "/admin/users", icon: Users },
   { name: "Fournisseurs", href: "/admin/suppliers", icon: Building2 },
+  { name: "Promotions", href: "/admin/deals", icon: Percent },
   { name: "Imports Externes", href: "/admin/external-imports", icon: Download },
   { name: "Statistiques", href: "/admin/analytics", icon: BarChart3 },
   { name: "Paramètres", href: "/admin/settings", icon: Settings },
