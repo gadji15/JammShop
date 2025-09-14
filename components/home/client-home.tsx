@@ -24,6 +24,9 @@ function FeaturedProducts() {
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
+  const isValidFilter = (v: string | null | undefined): v is FeaturedFilter =>
+    v === "new" || v === "best" || v === "featured"
+
   // Read featuredView from URL first, then localStorage
   useEffect(() => {
     const fromUrl = (searchParams?.get("featuredView") || "").toLowerCase()
@@ -43,13 +46,28 @@ function FeaturedProducts() {
     }
   }, [searchParams])
 
-  // Read featuredFilter from URL and sync to hook
+  // Read featuredFilter from URL, else restore from localStorage and reflect in URL
   useEffect(() => {
-    const f = (searchParams?.get("featuredFilter") || "").toLowerCase() as FeaturedFilter
-    if (f === "new" || f === "best" || f === "featured") {
-      if (f !== filter) setFilter(f)
+    const fromUrl = (searchParams?.get("featuredFilter") || "").toLowerCase()
+    if (isValidFilter(fromUrl)) {
+      if (fromUrl !== filter) setFilter(fromUrl)
+      try {
+        localStorage.setItem("homeFeaturedFilter", fromUrl)
+      } catch {}
+      return
     }
-  }, [searchParams, filter, setFilter])
+    // No filter in URL -> try localStorage
+    try {
+      const stored = (localStorage.getItem("homeFeaturedFilter") || "").toLowerCase()
+      if (isValidFilter(stored) && stored !== filter) {
+        setFilter(stored)
+        // reflect in URL for shareability
+        const sp = new URLSearchParams(searchParams?.toString() || "")
+        sp.set("featuredFilter", stored)
+        router.replace(`${pathname}?${sp.toString()}`, { scroll: false })
+      }
+    } catch {}
+  }, [searchParams, filter, setFilter, pathname, router])
 
   // Build URL with optional overrides
   const buildUrl = useMemo(() => {
@@ -73,6 +91,9 @@ function FeaturedProducts() {
 
   const onPickFilter = (f: FeaturedFilter) => {
     if (f !== filter) setFilter(f)
+    try {
+      localStorage.setItem("homeFeaturedFilter", f)
+    } catch {}
     router.replace(buildUrl({ featuredFilter: f, view: compact ? "compact" : "comfortable" }), { scroll: false })
   }
 
