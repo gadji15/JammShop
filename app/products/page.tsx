@@ -367,7 +367,12 @@ export default function ProductsPage() {
               <ProductGridSkeleton />
             ) : (
               <>
-                <ProductGrid products={items} onAddToCart={handleAddToCart} onToggleWishlist={handleToggleWishlist} />
+                <ProductGrid
+                  products={items}
+                  onAddToCart={handleAddToCart}
+                  onToggleWishlist={handleToggleWishlist}
+                  compact={true}
+                />
                 {/* Mobile pagination */}
                 <div className="mt-6 flex md:hidden items-center justify-between">
                   <Button variant="outline" size="sm" disabled={page <= 1 || loading} onClick={prevPage}>
