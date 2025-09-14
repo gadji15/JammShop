@@ -22,7 +22,7 @@ type AnyProduct = {
   name: string
   slug: string
   price: number | null
-  compare_at_price?: number | null
+  compare_price?: number | null
   images?: string[] | null
   categories?: any
   created_at?: string
@@ -33,6 +33,7 @@ type AnyProduct = {
 
 const DEFAULT_PAGE_SIZE = 24
 const MAX_FETCH_PAGE_SIZE = 60 // we fetch a single big page then filter client-side
+const DEFAULT_NEW_DAYS = Number(process.env.NEXT_PUBLIC_NEW_PRODUCT_DAYS || "7") || 7
 
 export default function DealsPage() {
   const router = useRouter()
@@ -48,15 +49,20 @@ export default function DealsPage() {
   const [sortBy, setSortBy] = useState<"discount" | "newest" | "price-asc" | "price-desc">("discount")
   const [minDiscount, setMinDiscount] = useState(10) // Show items with >= 10% discount by default
 
+  const [onlyNew, setOnlyNew] = useState(false)
+  const [newDays, setNewDays] = useState(DEFAULT_NEW_DAYS)
+
   // Helpers
   const buildUrl = useCallback(
-    (opts: Partial<{ page: number; pageSize: number; sort: string; minDiscount: number; view: string }>) => {
+    (opts: Partial<{ page: number; pageSize: number; sort: string; minDiscount: number; view: string; onlyNew: boolean; newDays: number }>) => {
       const sp = new URLSearchParams(searchParams?.toString() || "")
       const p = opts.page ?? page
       const ps = opts.pageSize ?? pageSize
       const s = opts.sort ?? sortBy
       const d = opts.minDiscount ?? minDiscount
       const v = opts.view ?? (compact ? "compact" : "comfortable")
+      const n = typeof opts.onlyNew === "boolean" ? opts.onlyNew : onlyNew
+      const nd = typeof opts.newDays === "number" ? opts.newDays : newDays
 
       if (p > 1) sp.set("page", String(p))
       else sp.delete("page")
@@ -68,10 +74,14 @@ export default function DealsPage() {
       else sp.delete("minDiscount")
       if (v !== "compact") sp.set("view", v)
       else sp.delete("view")
+      if (n) sp.set("onlyNew", "1")
+      else sp.delete("onlyNew")
+      if (nd !== DEFAULT_NEW_DAYS) sp.set("newDays", String(nd))
+      else sp.delete("newDays")
 
       return `${pathname}?${sp.toString()}`
     },
-    [searchParams, page, pageSize, sortBy, minDiscount, compact, pathname],
+    [searchParams, page, pageSize, sortBy, minDiscount, compact, pathname, onlyNew, newDays],
   )
 
   // Read initial state from URL + localStorage
@@ -82,11 +92,15 @@ export default function DealsPage() {
     const s = (sp.get("sort") || "discount") as typeof sortBy
     const d = Math.max(0, Math.min(95, Number(sp.get("minDiscount") || "10")))
     const view = (sp.get("view") || "").toLowerCase()
+    const newFlag = ["1", "true", "yes"].includes((sp.get("onlyNew") || "").toLowerCase())
+    const nd = Math.max(1, Number(sp.get("newDays") || DEFAULT_NEW_DAYS))
 
     setPage(p)
     setPageSize(ps)
     setSortBy(["discount", "newest", "price-asc", "price-desc"].includes(s) ? s : "discount")
     setMinDiscount(Number.isFinite(d) ? d : 10)
+    setOnlyNew(newFlag)
+    setNewDays(Number.isFinite(nd) ? nd : DEFAULT_NEW_DAYS)
 
     if (view === "comfortable") setCompact(false)
     else {
@@ -103,8 +117,8 @@ export default function DealsPage() {
   const fetchProducts = useCallback(async () => {
     setLoading(true)
     try {
-      // Fetch a big page of active products, we'll filter locally for discount
-      const url = `/api/products?page=1&pageSize=${MAX_FETCH_PAGE_SIZE}&sort=newest`
+      // Fetch a big page of on-sale products, we'll refine locally for minDiscount/newness
+      const url = `/api/products?page=1&pageSize=${MAX_FETCH_PAGE_SIZE}&sort=newest&onSale=1`
       const res = await fetch(url, { cache: "no-store" })
       const json: ApiResp<AnyProduct> = await res.json()
       if ((json as any).error) {
@@ -126,17 +140,24 @@ export default function DealsPage() {
 
   // Compute discounted list
   const discounted = useMemo(() => {
+    const now = Date.now()
+    const windowMs = newDays * 24 * 60 * 60 * 1000
+
     const withDiscount = items
       .map((p) => {
         const price = typeof p.price === "number" ? p.price : null
-        const compare = typeof p.compare_at_price === "number" ? p.compare_at_price : null
+        const compare = typeof (p as any).compare_price === "number" ? (p as any).compare_price : null
         const discount =
           price !== null && compare !== null && compare > 0 && price < compare
             ? Math.round(((compare - price) / compare) * 100)
             : 0
-        return { product: p, discount }
+        const isNew =
+          !!p.created_at &&
+          Number.isFinite(Date.parse(p.created_at)) &&
+          now - Date.parse(p.created_at) <= windowMs
+        return { product: p, discount, isNew }
       })
-      .filter((x) => x.discount >= minDiscount)
+      .filter((x) => x.discount >= minDiscount && (!onlyNew || x.isNew))
 
     // Sorting
     switch (sortBy) {
@@ -156,7 +177,7 @@ export default function DealsPage() {
     }
 
     return withDiscount
-  }, [items, minDiscount, sortBy])
+  }, [items, minDiscount, sortBy, onlyNew, newDays])
 
   // Pagination (client-side over filtered list)
   const total = discounted.length
@@ -168,12 +189,14 @@ export default function DealsPage() {
     return discounted.slice(from, to).map((x) => x.product)
   }, [discounted, pageClamped, pageSize])
 
-  const setAndPush = (opts: Partial<{ page: number; pageSize: number; sort: typeof sortBy; minDiscount: number; view: string }>) => {
+  const setAndPush = (opts: Partial<{ page: number; pageSize: number; sort: typeof sortBy; minDiscount: number; view: string; onlyNew: boolean; newDays: number }>) => {
     if (typeof opts.page === "number") setPage(opts.page)
     if (typeof opts.pageSize === "number") setPageSize(opts.pageSize)
     if (opts.sort) setSortBy(opts.sort)
     if (typeof opts.minDiscount === "number") setMinDiscount(opts.minDiscount)
     if (opts.view) setCompact(opts.view !== "comfortable")
+    if (typeof opts.onlyNew === "boolean") setOnlyNew(opts.onlyNew)
+    if (typeof opts.newDays === "number") setNewDays(opts.newDays)
     router.replace(buildUrl(opts), { scroll: false })
   }
 
@@ -245,8 +268,27 @@ export default function DealsPage() {
             </select>
           </div>
 
-          {/* View */}
-          <div className="flex items-center justify-end">
+          {/* View + New filter */}
+          <div className="flex items-center justify-end gap-3">
+            <label className="text-sm text-gray-600 flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={onlyNew}
+                onChange={(e) => setAndPush({ onlyNew: e.target.checked, page: 1 })}
+              />
+              Nouveautés
+            </label>
+            <div className="flex items-center gap-2">
+              <label className="text-sm text-gray-600">Jours</label>
+              <input
+                type="number"
+                min={1}
+                max={90}
+                value={newDays}
+                onChange={(e) => setAndPush({ newDays: Math.max(1, Math.min(90, Number(e.target.value) || DEFAULT_NEW_DAYS)), page: 1 })}
+                className="h-9 w-20 rounded-md border border-gray-300 px-2 text-sm"
+              />
+            </div>
             <Button
               variant={compact ? "secondary" : "outline"}
               size="sm"
@@ -271,7 +313,7 @@ export default function DealsPage() {
             <div className="text-center py-24 text-gray-600">
               Aucune offre correspondant aux critères actuels.
               <div className="mt-3">
-                <Button variant="outline" onClick={() => setAndPush({ minDiscount: 0, sort: "discount", page: 1 })}>
+                <Button variant="outline" onClick={() => setAndPush({ minDiscount: 0, sort: "discount", page: 1, onlyNew: false, newDays: DEFAULT_NEW_DAYS })}>
                   Réinitialiser les filtres
                 </Button>
               </div>

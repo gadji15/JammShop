@@ -52,14 +52,19 @@ export function ProductCard({ product, onAddToCart, onToggleWishlist, compact = 
     return "bg-red-600 text-white"
   }, [discountPercentage])
 
+  const newWindowDays = useMemo(() => {
+    const envVal = Number(process.env.NEXT_PUBLIC_NEW_PRODUCT_DAYS || "")
+    return Number.isFinite(envVal) && envVal > 0 ? envVal : 7
+  }, [])
+
   const isNew = useMemo(() => {
     const created = (product as any).created_at
     if (!created) return false
     const createdMs = Date.parse(created)
     if (Number.isNaN(createdMs)) return false
-    const sevenDaysMs = 7 * 24 * 60 * 60 * 1000
-    return Date.now() - createdMs <= sevenDaysMs
-  }, [product])
+    const windowMs = newWindowDays * 24 * 60 * 60 * 1000
+    return Date.now() - createdMs <= windowMs
+  }, [product, newWindowDays])
 
   // Ultra-compact white band in compact mode; standard sizes otherwise
   const badgeTextSize = compact ? "text-[9px] md:text-[10px]" : "text-[10px] md:text-xs"
