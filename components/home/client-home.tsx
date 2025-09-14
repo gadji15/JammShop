@@ -19,6 +19,7 @@ type FeaturedFilter = "new" | "best" | "featured"
 function FeaturedProducts() {
   const { products: showcaseProducts, loading: showcaseLoading, filter, setFilter } = useShowcaseProducts("featured")
   const [compact, setCompact] = useState(true)
+  const [limit, setLimit] = useState<number>(8)
 
   const router = useRouter()
   const pathname = usePathname()
@@ -26,6 +27,12 @@ function FeaturedProducts() {
 
   const isValidFilter = (v: string | null | undefined): v is FeaturedFilter =>
     v === "new" || v === "best" || v === "featured"
+
+  const normalizeLimit = (n: number) => {
+    // constrain between 4 and 48, default 8
+    if (Number.isNaN(n)) return 8
+    return Math.min(48, Math.max(4, n))
+  }
 
   // Read featuredView from URL first, then localStorage
   useEffect(() => {
@@ -54,27 +61,50 @@ function FeaturedProducts() {
       try {
         localStorage.setItem("homeFeaturedFilter", fromUrl)
       } catch {}
-      return
+    } else {
+      // No filter in URL -> try localStorage
+      try {
+        const stored = (localStorage.getItem("homeFeaturedFilter") || "").toLowerCase()
+        if (isValidFilter(stored) && stored !== filter) {
+          setFilter(stored)
+          const sp = new URLSearchParams(searchParams?.toString() || "")
+          sp.set("featuredFilter", stored)
+          router.replace(`${pathname}?${sp.toString()}`, { scroll: false })
+        }
+      } catch {}
     }
-    // No filter in URL -> try localStorage
-    try {
-      const stored = (localStorage.getItem("homeFeaturedFilter") || "").toLowerCase()
-      if (isValidFilter(stored) && stored !== filter) {
-        setFilter(stored)
-        // reflect in URL for shareability
-        const sp = new URLSearchParams(searchParams?.toString() || "")
-        sp.set("featuredFilter", stored)
-        router.replace(`${pathname}?${sp.toString()}`, { scroll: false })
-      }
-    } catch {}
   }, [searchParams, filter, setFilter, pathname, router])
+
+  // Read featuredLimit from URL, else restore from localStorage and reflect in URL
+  useEffect(() => {
+    const fromUrl = Number(searchParams?.get("featuredLimit") || NaN)
+    if (!Number.isNaN(fromUrl)) {
+      const norm = normalizeLimit(fromUrl)
+      setLimit(norm)
+      try {
+        localStorage.setItem("homeFeaturedLimit", String(norm))
+      } catch {}
+    } else {
+      try {
+        const stored = Number(localStorage.getItem("homeFeaturedLimit") || NaN)
+        if (!Number.isNaN(stored)) {
+          const norm = normalizeLimit(stored)
+          setLimit(norm)
+          const sp = new URLSearchParams(searchParams?.toString() || "")
+          sp.set("featuredLimit", String(norm))
+          router.replace(`${pathname}?${sp.toString()}`, { scroll: false })
+        }
+      } catch {}
+    }
+  }, [searchParams, pathname, router])
 
   // Build URL with optional overrides
   const buildUrl = useMemo(() => {
-    return (opts: { view?: "compact" | "comfortable"; featuredFilter?: FeaturedFilter }) => {
+    return (opts: { view?: "compact" | "comfortable"; featuredFilter?: FeaturedFilter; featuredLimit?: number }) => {
       const sp = new URLSearchParams(searchParams?.toString() || "")
       if (opts.view) sp.set("featuredView", opts.view)
       if (opts.featuredFilter) sp.set("featuredFilter", opts.featuredFilter)
+      if (typeof opts.featuredLimit === "number") sp.set("featuredLimit", String(normalizeLimit(opts.featuredLimit)))
       return `${pathname}?${sp.toString()}`
     }
   }, [searchParams, pathname])
@@ -86,7 +116,7 @@ function FeaturedProducts() {
     try {
       localStorage.setItem("homeFeaturedView", view)
     } catch {}
-    router.replace(buildUrl({ view, featuredFilter: filter as FeaturedFilter }), { scroll: false })
+    router.replace(buildUrl({ view, featuredFilter: filter as FeaturedFilter, featuredLimit: limit }), { scroll: false })
   }
 
   const onPickFilter = (f: FeaturedFilter) => {
@@ -94,7 +124,10 @@ function FeaturedProducts() {
     try {
       localStorage.setItem("homeFeaturedFilter", f)
     } catch {}
-    router.replace(buildUrl({ featuredFilter: f, view: compact ? "compact" : "comfortable" }), { scroll: false })
+    router.replace(
+      buildUrl({ featuredFilter: f, view: compact ? "compact" : "comfortable", featuredLimit: limit }),
+      { scroll: false },
+    )
   }
 
   const handleAddToCart = async (productId: string) => {
@@ -106,7 +139,7 @@ function FeaturedProducts() {
   }
 
   if (showcaseLoading) {
-    return <ProductGridSkeleton count={8} />
+    return <ProductGridSkeleton count={limit} />
   }
 
   return (
@@ -148,7 +181,7 @@ function FeaturedProducts() {
         </div>
       </div>
       <ProductGrid
-        products={showcaseProducts}
+        products={showcaseProducts.slice(0, limit)}
         onAddToCart={handleAddToCart}
         onToggleWishlist={handleToggleWishlist}
         compact={compact}
