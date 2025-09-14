@@ -38,6 +38,7 @@ export default function ProductsPage() {
     searchQuery: "",
   })
   const [showFilters, setShowFilters] = useState(false)
+  const [compactView, setCompactView] = useState(true)
 
   // Server data
   const [items, setItems] = useState<ProductWithCategory[]>([])
@@ -61,6 +62,8 @@ export default function ProductsPage() {
     const sort = (sp.get("sort") || "newest") as ProductFiltersType["sortBy"]
     const pg = Math.max(1, Number(sp.get("page") || "1"))
     const ps = Math.min(60, Math.max(1, Number(sp.get("pageSize") || DEFAULT_PAGE_SIZE)))
+    const viewParam = (sp.get("view") || "compact").toLowerCase()
+    setCompactView(viewParam !== "comfortable")
 
     setFilters({
       categories: cats,
@@ -75,7 +78,7 @@ export default function ProductsPage() {
   }, [searchParams])
 
   const buildUrl = useCallback(
-    (next: Partial<ProductFiltersType> & { page?: number; pageSize?: number }) => {
+    (next: Partial<ProductFiltersType> & { page?: number; pageSize?: number; view?: "compact" | "comfortable" }) => {
       const sp = new URLSearchParams()
 
       const q = next.searchQuery ?? filters.searchQuery
@@ -103,9 +106,12 @@ export default function ProductsPage() {
       const ps = next.pageSize ?? pageSize
       if (ps !== DEFAULT_PAGE_SIZE) sp.set("pageSize", String(ps))
 
+      const view = next.view ?? (compactView ? "compact" : "comfortable")
+      if (view !== "compact") sp.set("view", view)
+
       return `${pathname}?${sp.toString()}`
     },
-    [filters, page, pageSize, pathname],
+    [filters, page, pageSize, pathname, compactView],
   )
 
   // Fetch server data based on URL params
@@ -173,6 +179,12 @@ export default function ProductsPage() {
     setPageSize(ps)
     setPage(1)
     router.push(buildUrl({ pageSize: ps, page: 1 }))
+  }
+
+  const toggleView = () => {
+    const nextCompact = !compactView
+    setCompactView(nextCompact)
+    router.push(buildUrl({ view: nextCompact ? "compact" : "comfortable" }))
   }
 
   const clearAll = () => {
@@ -299,7 +311,7 @@ export default function ProductsPage() {
 
         {/* Toolbar: count, sort, page size, filters button */}
         <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <p className="text-gray-600 order-2 md:order-1">
+          <p className="text-gray-600 order-3 md:order-1">
             {loading ? "Chargement..." : `${total.toLocaleString()} produit(s) • Page ${page}/${totalPages}`}
           </p>
 
@@ -341,6 +353,19 @@ export default function ProductsPage() {
               Filtres
             </Button>
           </div>
+
+          {/* View toggle */}
+          <div className="order-2 md:order-3 flex items-center justify-end">
+            <Button
+              variant={compactView ? "secondary" : "outline"}
+              size="sm"
+              onClick={toggleView}
+              className={compactView ? "bg-gray-100 text-gray-900" : ""}
+              title={compactView ? "Passer en affichage confortable" : "Passer en affichage compact"}
+            >
+              {compactView ? "Affichage compact" : "Affichage confortable"}
+            </Button>
+          </div>
         </div>
 
         {/* Products Grid */}
@@ -353,7 +378,7 @@ export default function ProductsPage() {
                 products={items}
                 onAddToCart={handleAddToCart}
                 onToggleWishlist={handleToggleWishlist}
-                compact={true}
+                compact={compactView}
               />
               {/* Mobile pagination */}
               <div className="mt-6 flex md:hidden items-center justify-between">
