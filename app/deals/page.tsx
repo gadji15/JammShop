@@ -46,11 +46,20 @@ export const metadata: Metadata = {
     description: "Réductions vérifiées et mises à jour régulièrement sur JammShop.",
     url: "/deals",
     type: "website",
+    images: [
+      {
+        url: `/api/og?route=deals`,
+        width: 1200,
+        height: 630,
+        alt: "Offres & Promotions JammShop",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Offres et Promotions | JammShop",
     description: "Réductions vérifiées et mises à jour régulièrement sur JammShop.",
+    images: [`/api/og?route=deals`],
   },
 }
 

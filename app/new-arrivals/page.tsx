@@ -18,12 +18,21 @@ export const metadata: Metadata = {
       "Découvrez les dernières nouveautés JammShop : produits fraîchement ajoutés, prêts à être expédiés.",
     url: "/new-arrivals",
     type: "website",
+    images: [
+      {
+        url: `/api/og?route=new-arrivals`,
+        width: 1200,
+        height: 630,
+        alt: "Nouveautés JammShop",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Nouveautés | JammShop",
     description:
       "Découvrez les dernières nouveautés JammShop : produits fraîchement ajoutés, prêts à être expédiés.",
+    images: [`/api/og?route=new-arrivals`],
   },
 }
 
