@@ -27,6 +27,7 @@ export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [hasShadow, setHasShadow] = useState(false)
+  const [cartOpen, setCartOpen] = useState(false)
   const { categories } = useCategories()
   const router = useRouter()
   const supabase = createClient()
@@ -277,16 +278,14 @@ export function Header() {
               </Button>
 
               {/* Cart */}
-              <Button variant="ghost" size="icon" asChild className="relative">
-                <Link href="/cart">
-                  <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />
-                  {cartItemsCount > 0 && (
-                    <Badge className="absolute -top-1 -right-1 h-4 w-4 sm:h-5 sm:w-5 rounded-full p-0 flex items-center justify-center text-[10px] sm:text-xs bg-blue-600">
-                      {cartItemsCount}
-                    </Badge>
-                  )}
-                  <span className="sr-only">Panier</span>
-                </Link>
+              <Button variant="ghost" size="icon" className="relative" onClick={() => setCartOpen(true)}>
+                <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />
+                {cartItemsCount > 0 && (
+                  <Badge className="absolute -top-1 -right-1 h-4 w-4 sm:h-5 sm:w-5 rounded-full p-0 flex items-center justify-center text-[10px] sm:text-xs bg-blue-600">
+                    {cartItemsCount}
+                  </Badge>
+                )}
+                <span className="sr-only">Panier</span>
               </Button>
 
               {/* User Menu */}
