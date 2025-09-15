@@ -16,13 +16,11 @@ export async function GET(req: Request) {
   const from = (page - 1) * pageSize
   const to = from + pageSize - 1
 
-  // brands_agg view provides supplier_id, product_count and timestamps aggregated from products
-  let qb = supabase.from("brands_agg").select("*", { count: "exact" })
+  // brands_full exposes name/slug/logo with counts (joined brands + brands_agg)
+  let qb = supabase.from("brands_full").select("*", { count: "exact" })
 
-  // As we don't have a suppliers table in schema listing, we can't search by brand name.
-  // We allow searching by supplier_id (UUID) prefix for now.
   if (q) {
-    qb = qb.ilike("supplier_id::text", `%${q}%` as any)
+    qb = qb.ilike("name", `%${q}%`)
   }
 
   switch (sort) {
@@ -34,8 +32,7 @@ export async function GET(req: Request) {
       break
     case "name":
     default:
-      // Fallback: order by supplier_id to simulate name ordering
-      qb = qb.order("supplier_id", { ascending: true })
+      qb = qb.order("name", { ascending: true })
       break
   }
 
@@ -45,17 +42,8 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  // Map to a uniform API shape
-  const rows = (data || []).map((r: any) => ({
-    id: r.supplier_id,
-    name: r.supplier_id, // Without a suppliers table, we expose the UUID as label. Can be enhanced later.
-    product_count: r.product_count,
-    first_created_at: r.first_created_at,
-    last_created_at: r.last_created_at,
-  }))
-
   return NextResponse.json({
-    data: rows,
+    data: data || [],
     page,
     pageSize,
     total: count ?? 0,
