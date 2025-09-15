@@ -128,18 +128,14 @@ export function ProductCard({ product, onAddToCart, onToggleWishlist, compact = 
           </div>
         )}
 
-        {/* Badges */}
-        <div className="absolute top-2 left-2 flex flex-col gap-1">
+        {/* Badges (kept clear of ribbon; no duplicate promo badge) */}
+        <div className={`absolute ${discountPercentage > 0 ? "top-12 md:top-14" : "top-2"} left-2 z-20 flex flex-col gap-1`}>
           {product.is_featured && (
             <Badge variant="secondary" className={`bg-blue-600 text-white ${badgeTextSize} px-1.5 py-0.5`}>
               Vedette
             </Badge>
           )}
-          {discountPercentage > 0 && (
-            <Badge className={`${discountBgClass} ${badgeTextSize} px-1.5 py-0.5`}>
-              -{discountPercentage}%
-            </Badge>
-          )}
+          {/* Remove old promo badge to avoid duplication with corner ribbon */}
           {product.stock_quantity <= product.low_stock_threshold && (
             <Badge
               variant="outline"
