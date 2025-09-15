@@ -48,7 +48,7 @@ export default function CheckoutPage() {
     notes: "",
   })
 
-  const { items, total, clearCart } = useCart()
+  const { items, clearCart, getTotalPrice } = useCart()
   const { createOrder } = useOrders(user?.id)
   const router = useRouter()
   const supabase = createClient()
@@ -127,14 +127,14 @@ export default function CheckoutPage() {
     try {
       const shippingAddress = `${formData.address}, ${formData.city} ${formData.postal_code}`
 
-      const orderItems = items.map((item) => ({
-        product_id: item.id,
+      const orderItems = items.map((item: any) => ({
+        product_id: item.product_id || item.id,
         quantity: item.quantity,
-        price: item.price,
+        price: item.products?.price ?? item.unit_price ?? 0,
       }))
 
       const order = await createOrder({
-        total_amount: total,
+        total_amount: Math.round(getTotalPrice()),
         shipping_address: shippingAddress,
         payment_method: formData.payment_method,
         items: orderItems,
@@ -391,7 +391,7 @@ export default function CheckoutPage() {
                   <div className="space-y-2">
                     <div className="flex justify-between">
                       <span>Sous-total</span>
-                      <span>{total.toLocaleString()} FCFA</span>
+                      <span>{Math.round(getTotalPrice()).toLocaleString()} FCFA</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Livraison</span>
