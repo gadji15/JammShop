@@ -129,7 +129,10 @@ export function ProductCard({ product, onAddToCart, onToggleWishlist, compact = 
         )}
 
         {/* Badges (kept clear of ribbon; no duplicate promo badge) */}
-        <div className={`absolute ${discountPercentage > 0 ? "top-12 md:top-14" : "top-2"} left-2 z-20 flex flex-col gap-1`}>
+        <div
+          className={`absolute ${discountPercentage > 0 ? "top-12 md:top-14" : "top-2"} left-2 z-20 flex flex-col gap-1
+            motion-safe:transition-transform motion-safe:duration-300 group-hover:-translate-y-1`}
+        >
           {product.is_featured && (
             <Badge variant="secondary" className={`bg-blue-600 text-white ${badgeTextSize} px-1.5 py-0.5`}>
               Vedette
@@ -146,12 +149,13 @@ export function ProductCard({ product, onAddToCart, onToggleWishlist, compact = 
           )}
         </div>
 
-        {/* Wishlist button */}
+        {/* Wishlist button (visible on mobile by default; fades on hover desktop) */}
         <Button
           variant="ghost"
           size="icon"
-          className={`absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-white/80 hover:bg-white ${wishBtnSize}`}
+          className={`absolute top-2 right-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity bg-white/80 hover:bg-white ${wishBtnSize}`}
           onClick={handleToggleWishlist}
+          aria-label={isWishlisted ? "Retirer des favoris" : "Ajouter aux favoris"}
         >
           <Heart className={`${wishIconSize} ${isWishlisted ? "fill-red-500 text-red-500" : "text-gray-600"}`} />
         </Button>
