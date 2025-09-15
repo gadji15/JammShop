@@ -11,6 +11,8 @@ import type { ProductWithCategory } from "@/lib/types/database"
 import { Filter } from "lucide-react"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { useCart } from "@/lib/hooks/use-cart"
+import { useAuthModal } from "@/lib/hooks/use-auth-modal"
 
 const DEFAULT_NEW_DAYS = Number(process.env.NEXT_PUBLIC_NEW_PRODUCT_DAYS || "7") || 7
 
@@ -221,9 +223,14 @@ export default function ProductsPage() {
     router.push(buildUrl({ ...cleared, page: 1, pageSize: DEFAULT_PAGE_SIZE }))
   }
 
+  const cart = useCart()
   const handleAddToCart = async (productId: string) => {
-    // TODO: Implement add to cart functionality
-    console.log("Add to cart:", productId)
+    try {
+      await cart.addToCart(productId, 1)
+    } catch (e) {
+      console.error("Add to cart failed:", e)
+      // Optionally show a toast here if your toast system is available
+    }
   }
 
   const handleToggleWishlist = async (productId: string) => {

@@ -17,16 +17,22 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { SearchModal } from "@/components/search/search-modal"
+import { useCart } from "@/lib/hooks/use-cart"
+import { CartDrawer } from "@/components/cart/cart-drawer"
 
 export function Header() {
   const [user, setUser] = useState<any>(null)
   const [userProfile, setUserProfile] = useState<any>(null)
   const [cartItemsCount, setCartItemsCount] = useState(0)
+  const [wishlistCount, setWishlistCount] = useState(0)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
+  const [hasShadow, setHasShadow] = useState(false)
+  const [cartOpen, setCartOpen] = useState(false)
   const { categories } = useCategories()
   const router = useRouter()
   const supabase = createClient()
+  const cart = useCart()
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -51,6 +57,62 @@ export function Header() {
 
     return () => subscription.unsubscribe()
   }, [supabase.auth])
+
+  // Sync cart badge from cart hook
+  useEffect(() => {
+    setCartItemsCount(cart.getTotalItems ? cart.getTotalItems() : (cart.items?.reduce?.((t: number, it: any) => t + (it?.quantity || 0), 0) || 0))
+  }, [cart.items, cart.getTotalItems])
+
+  // Keyboard shortcuts: Cmd/Ctrl+K and '/' to open search
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const isCmdK = (e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')
+      const isSlash = !e.ctrlKey && !e.metaKey && e.key === '/'
+      if (isCmdK || isSlash) {
+        e.preventDefault()
+        setIsSearchOpen(true)
+        setIsMenuOpen(false)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+
+  // Shadow on scroll for better readability
+  useEffect(() => {
+    const onScroll = () => setHasShadow(window.scrollY > 4)
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
+  // Wishlist count from localStorage (fallback until a hook exists)
+  useEffect(() => {
+    const readWishlist = () => {
+      try {
+        // Try common keys
+        const raw = localStorage.getItem("wishlist") || localStorage.getItem("wishlistItems") || "[]"
+        const arr = JSON.parse(raw)
+        if (Array.isArray(arr)) {
+          // Support arrays of ids or objects with id
+          const count = arr.length
+          setWishlistCount(Number.isFinite(count) ? count : 0)
+        } else {
+          setWishlistCount(0)
+        }
+      } catch {
+        setWishlistCount(0)
+      }
+    }
+    readWishlist()
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === "wishlist" || e.key === "wishlistItems") {
+        readWishlist()
+      }
+    }
+    window.addEventListener("storage", onStorage)
+    return () => window.removeEventListener("storage", onStorage)
+  }, [])
 
   const fetchUserProfile = async (userId: string) => {
     try {
@@ -80,7 +142,7 @@ export function Header() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
+      <header className={`sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 ${hasShadow ? "shadow-sm" : ""}`}>
         <div className="container mx-auto px-4">
           {/* Top bar */}
           <div className="flex h-16 items-center justify-between">
@@ -141,6 +203,32 @@ export function Header() {
                 </DropdownMenuContent>
               </DropdownMenu>
 
+              {/* Discover Dropdown to avoid clutter */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="text-gray-700 hover:text-blue-600 font-medium">
+                    Découvrir
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56">
+                  <DropdownMenuItem asChild>
+                    <Link href="/new-arrivals" className="cursor-pointer">
+                      Nouveautés
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/deals" className="cursor-pointer">
+                      Offres
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/brands" className="cursor-pointer">
+                      Marques
+                    </Link>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
               <Link href="/contact" className="text-gray-700 hover:text-blue-600 font-medium transition-colors">
                 Contact
               </Link>
@@ -177,25 +265,28 @@ export function Header() {
                 </>
               )}
 
-              {/* Wishlist */}
-              <Button variant="ghost" size="icon" asChild className="hidden sm:flex">
+              {/* Wishlist with badge (localStorage-based fallback) */}
+              <Button variant="ghost" size="icon" asChild className="hidden sm:flex relative">
                 <Link href="/wishlist">
                   <Heart className="h-4 w-4 sm:h-5 sm:w-5" />
+                  {wishlistCount > 0 && (
+                    <Badge className="absolute -top-1 -right-1 h-4 w-4 sm:h-5 sm:w-5 rounded-full p-0 flex items-center justify-center text-[10px] sm:text-xs bg-pink-600">
+                      {wishlistCount}
+                    </Badge>
+                  )}
                   <span className="sr-only">Liste de souhaits</span>
                 </Link>
               </Button>
 
               {/* Cart */}
-              <Button variant="ghost" size="icon" className="relative" asChild>
-                <Link href="/cart">
-                  <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />
-                  {cartItemsCount > 0 && (
-                    <Badge className="absolute -top-1 -right-1 h-4 w-4 sm:h-5 sm:w-5 rounded-full p-0 flex items-center justify-center text-xs bg-blue-600">
-                      {cartItemsCount}
-                    </Badge>
-                  )}
-                  <span className="sr-only">Panier</span>
-                </Link>
+              <Button variant="ghost" size="icon" className="relative" onClick={() => setCartOpen(true)}>
+                <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />
+                {cartItemsCount > 0 && (
+                  <Badge className="absolute -top-1 -right-1 h-4 w-4 sm:h-5 sm:w-5 rounded-full p-0 flex items-center justify-center text-[10px] sm:text-xs bg-blue-600">
+                    {cartItemsCount}
+                  </Badge>
+                )}
+                <span className="sr-only">Panier</span>
               </Button>
 
               {/* User Menu */}
@@ -259,123 +350,156 @@ export function Header() {
                     <span className="sr-only">Menu</span>
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="right" className="w-80 p-0" aria-describedby={undefined}>
-                  <SheetHeader className="p-6 border-b bg-gradient-to-r from-blue-50 to-purple-50">
-                    <SheetTitle className="sr-only">Menu mobile</SheetTitle>
-                    <SheetDescription className="sr-only">Navigation principale de JammShop</SheetDescription>
-                    <div className="flex items-center space-x-2">
-                      <div className="relative">
-                        <svg width="32" height="32" viewBox="0 0 32 32" className="drop-shadow-sm">
-                          <defs>
-                            <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                              <stop offset="0%" stopColor="#3B82F6" />
-                              <stop offset="50%" stopColor="#6366F1" />
-                              <stop offset="100%" stopColor="#8B5CF6" />
-                            </linearGradient>
-                          </defs>
-                          <rect width="32" height="32" rx="8" fill="url(#logoGradient)" />
-                          <path d="M8 12h16v2H8zm0 4h12v2H8zm0 4h8v2H8z" fill="white" opacity="0.9" />
-                          <circle cx="22" cy="20" r="3" fill="white" opacity="0.8" />
-                          <path d="M21 19l1 1 2-2" stroke="#3B82F6" strokeWidth="1.5" fill="none" />
-                        </svg>
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="font-bold text-xl bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                          JammShop
-                        </span>
-                        <span className="text-xs text-gray-500 -mt-1 hidden sm:block">Marketplace</span>
-                      </div>
-                    </div>
-                  </SheetHeader>
-                  <div className="flex flex-col h-full">
-
-                    {/* Scrollable Content */}
-                    <div className="flex-1 overflow-y-auto p-6">
-                      <div className="space-y-6">
-                        {/* Search Button */}
-                        <Button
-                          variant="outline"
-                          className="w-full justify-start bg-transparent"
-                          onClick={() => {
-                            setIsSearchOpen(true)
-                            setIsMenuOpen(false)
-                          }}
-                        >
-                          <Search className="h-4 w-4 mr-2" />
-                          Rechercher des produits
-                        </Button>
-
-                        {isAdmin && (
-                          <Button
-                            variant="outline"
-                            className="w-full justify-start bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
-                            asChild
-                          >
-                            <Link href="/admin" onClick={() => setIsMenuOpen(false)}>
-                              <Settings className="h-4 w-4 mr-2" />
-                              Administration
-                            </Link>
-                          </Button>
-                        )}
-
-                        {/* Navigation Links */}
-                        <div className="space-y-4">
-                          <Link
-                            href="/products"
-                            className="block text-lg font-medium text-gray-900 hover:text-blue-600 transition-colors"
-                            onClick={() => setIsMenuOpen(false)}
-                          >
-                            Produits
-                          </Link>
-
-                          <div className="space-y-3">
-                            <h3 className="text-lg font-medium text-gray-900">Catégories</h3>
-                            <div className="pl-4 space-y-3 max-h-48 overflow-y-auto">
-                              {categories.map((category) => (
-                                <Link
-                                  key={category.id}
-                                  href={`/categories/${category.slug}`}
-                                  className="block text-gray-700 hover:text-blue-600 transition-colors py-1"
-                                  onClick={() => setIsMenuOpen(false)}
-                                >
-                                  {category.name}
-                                </Link>
-                              ))}
-                            </div>
-                          </div>
-
-                          <Link
-                            href="/contact"
-                            className="block text-lg font-medium text-gray-900 hover:text-blue-600 transition-colors"
-                            onClick={() => setIsMenuOpen(false)}
-                          >
-                            Contact
-                          </Link>
-
-                          <Link
-                            href="/about"
-                            className="block text-lg font-medium text-gray-900 hover:text-blue-600 transition-colors"
-                            onClick={() => setIsMenuOpen(false)}
-                          >
-                            À propos
-                          </Link>
+                <SheetContent side="right" className="w-[88vw] max-w-sm p-0" aria-describedby={undefined}>
+                  <div className="flex h-dvh flex-col">
+                    {/* Header */}
+                    <SheetHeader className="px-4 pt-4 pb-3 border-b bg-gradient-to-r from-blue-50 to-purple-50">
+                      <SheetTitle className="sr-only">Menu mobile</SheetTitle>
+                      <SheetDescription className="sr-only">Navigation principale de JammShop</SheetDescription>
+                      <div className="flex items-center gap-2">
+                        <div className="relative">
+                          <svg width="32" height="32" viewBox="0 0 32 32" className="drop-shadow-sm">
+                            <defs>
+                              <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stopColor="#3B82F6" />
+                                <stop offset="50%" stopColor="#6366F1" />
+                                <stop offset="100%" stopColor="#8B5CF6" />
+                              </linearGradient>
+                            </defs>
+                            <rect width="32" height="32" rx="8" fill="url(#logoGradient)" />
+                            <path d="M8 12h16v2H8zm0 4h12v2H8zm0 4h8v2H8z" fill="white" opacity="0.9" />
+                            <circle cx="22" cy="20" r="3" fill="white" opacity="0.8" />
+                            <path d="M21 19l1 1 2-2" stroke="#3B82F6" strokeWidth="1.5" fill="none" />
+                          </svg>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="font-bold text-xl bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                            JammShop
+                          </span>
+                          <span className="text-xs text-gray-500 -mt-1 hidden sm:block">Marketplace</span>
                         </div>
                       </div>
-                    </div>
+                    </SheetHeader>
 
-                    {/* Footer - Auth Buttons */}
+                    {/* Scrollable Content */}
+                    <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-4">
+                      {/* Search Button */}
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start bg-white text-gray-800 hover:bg-gray-100"
+                        onClick={() => {
+                          setIsSearchOpen(true)
+                          setIsMenuOpen(false)
+                        }}
+                      >
+                        <Search className="h-4 w-4 mr-2" />
+                        Rechercher des produits
+                      </Button>
+
+                      {isAdmin && (
+                        <Button
+                          variant="outline"
+                          className="w-full justify-start bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
+                          asChild
+                        >
+                          <Link href="/admin" onClick={() => setIsMenuOpen(false)}>
+                            <Settings className="h-4 w-4 mr-2" />
+                            Administration
+                          </Link>
+                        </Button>
+                      )}
+
+                      {/* Primary Links */}
+                      <div className="space-y-2">
+                        <Link
+                          href="/products"
+                          className="block rounded-md px-3 py-2 text-base font-medium text-gray-900 hover:bg-gray-100"
+                          onClick={() => setIsMenuOpen(false)}
+                        >
+                          Produits
+                        </Link>
+                      </div>
+
+                      {/* Categories */}
+                      <div className="space-y-2">
+                        <div className="px-3 py-2 text-xs uppercase tracking-wide text-gray-500">Catégories</div>
+                        <div className="pl-1 space-y-1 max-h-48 overflow-y-auto">
+                          {categories.map((category) => (
+                            <Link
+                              key={category.id}
+                              href={`/categories/${category.slug}`}
+                              className="block rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                              onClick={() => setIsMenuOpen(false)}
+                            >
+                              {category.name}
+                            </Link>
+                          ))}
+                        </div>
+                        <Link
+                          href="/products"
+                          className="block rounded-md px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50"
+                          onClick={() => setIsMenuOpen(false)}
+                        >
+                          Voir toutes les catégories
+                        </Link>
+                      </div>
+
+                      {/* Discover */}
+                      <div className="space-y-1">
+                        <div className="px-3 py-2 text-xs uppercase tracking-wide text-gray-500">Découvrir</div>
+                        <Link
+                          href="/new-arrivals"
+                          className="block rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          onClick={() => setIsMenuOpen(false)}
+                        >
+                          Nouveautés
+                        </Link>
+                        <Link
+                          href="/deals"
+                          className="block rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          onClick={() => setIsMenuOpen(false)}
+                        >
+                          Offres
+                        </Link>
+                        <Link
+                          href="/brands"
+                          className="block rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          onClick={() => setIsMenuOpen(false)}
+                        >
+                          Marques
+                        </Link>
+                      </div>
+
+                      {/* Secondary */}
+                      <div className="space-y-1 pt-2">
+                        <Link
+                          href="/contact"
+                          className="block rounded-md px-3 py-2 text-base font-medium text-gray-900 hover:bg-gray-100"
+                          onClick={() => setIsMenuOpen(false)}
+                        >
+                          Contact
+                        </Link>
+                        <Link
+                          href="/about"
+                          className="block rounded-md px-3 py-2 text-base font-medium text-gray-900 hover:bg-gray-100"
+                          onClick={() => setIsMenuOpen(false)}
+                        >
+                          À propos
+                        </Link>
+                      </div>
+                    </nav>
+
+                    {/* Sticky Footer - Auth Buttons */}
                     {!user && (
-                      <div className="p-6 border-t bg-gray-50 space-y-3">
-                        <Button asChild className="w-full bg-transparent" variant="outline">
-                          <Link href="/auth/login" onClick={() => setIsMenuOpen(false)}>
-                            Connexion
+                      <div className="sticky bottom-0 bg-white border-t px-3 pt-3 pb-[calc(env(safe-area-inset-bottom,0px)+12px)]">
+                        <div className="flex gap-2">
+                          <Link href="/auth/login" className="flex-1" onClick={() => setIsMenuOpen(false)}>
+                            <Button variant="outline" className="w-full">Connexion</Button>
                           </Link>
-                        </Button>
-                        <Button asChild className="w-full bg-blue-600 hover:bg-blue-700">
-                          <Link href="/auth/register" onClick={() => setIsMenuOpen(false)}>
-                            Inscription
+                          <Link href="/auth/register" className="flex-1" onClick={() => setIsMenuOpen(false)}>
+                            <Button className="w-full bg-blue-600 hover:bg-blue-700">Inscription</Button>
                           </Link>
-                        </Button>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -385,6 +509,9 @@ export function Header() {
           </div>
         </div>
       </header>
+
+      {/* Cart Drawer */}
+      <CartDrawer open={cartOpen} onOpenChange={setCartOpen} />
 
       {/* Search Modal */}
       <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} onSearch={handleSearch} />

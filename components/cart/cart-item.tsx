@@ -9,14 +9,14 @@ import Link from "next/link"
 
 interface CartItemProps {
   item: CartItem
-  onUpdateQuantity: (itemId: string, quantity: number) => Promise<void>
-  onRemove: (itemId: string) => Promise<void>
+  onUpdateQuantity: (productId: string, quantity: number) => Promise<void>
+  onRemove: (productId: string) => Promise<void>
 }
 
 export function CartItemComponent({ item, onUpdateQuantity, onRemove }: CartItemProps) {
   const handleQuantityChange = async (newQuantity: number) => {
     try {
-      await onUpdateQuantity(item.id, newQuantity)
+      await onUpdateQuantity(item.product_id, newQuantity)
     } catch (error) {
       console.error("Error updating quantity:", error)
     }
@@ -24,7 +24,7 @@ export function CartItemComponent({ item, onUpdateQuantity, onRemove }: CartItem
 
   const handleRemove = async () => {
     try {
-      await onRemove(item.id)
+      await onRemove(item.product_id)
     } catch (error) {
       console.error("Error removing item:", error)
     }

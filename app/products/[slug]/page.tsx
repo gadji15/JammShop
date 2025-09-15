@@ -13,6 +13,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { useState } from "react"
+import { useCart } from "@/lib/hooks/use-cart"
 
 interface ProductPageProps {
   params: Promise<{ slug: string }>
@@ -25,6 +26,7 @@ export default function ProductPage({ params }: ProductPageProps) {
   const [quantity, setQuantity] = useState(1)
   const [isAddingToCart, setIsAddingToCart] = useState(false)
   const [isWishlisted, setIsWishlisted] = useState(false)
+  const cart = useCart()
 
   if (loading) {
     return <ProductPageSkeleton />
@@ -37,9 +39,9 @@ export default function ProductPage({ params }: ProductPageProps) {
   const handleAddToCart = async () => {
     setIsAddingToCart(true)
     try {
-      // TODO: Implement add to cart functionality
-      console.log("Add to cart:", product.id, "quantity:", quantity)
-      await new Promise((resolve) => setTimeout(resolve, 1000)) // Simulate API call
+      await cart.addToCart(product.id, quantity)
+    } catch (err) {
+      console.error("Add to cart failed:", err)
     } finally {
       setIsAddingToCart(false)
     }

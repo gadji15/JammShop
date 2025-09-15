@@ -7,10 +7,17 @@ import { Separator } from "@/components/ui/separator"
 import { useCart } from "@/lib/hooks/use-cart"
 import { ArrowLeft, ShoppingBag } from "lucide-react"
 import Link from "next/link"
+import { useEffect } from "react"
 
 export default function CartPage() {
-  const { items, loading, addToCart, updateQuantity, removeFromCart, clearCart, getTotalPrice, getTotalItems } =
+  const { items, loading, addToCart, updateQuantity, removeFromCart, clearCart, getTotalPrice, getTotalItems, init } =
     useCart()
+
+  // Ensure cart store is initialized on mount
+  useEffect(() => {
+    init().catch(() => {})
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   if (loading) {
     return (
