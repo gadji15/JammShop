@@ -47,30 +47,3 @@ export default async function NewArrivalsPage() {
     </div>
   )
 }
-
-      {/* Grid */}
-      <div className="container mx-auto px-4 pb-10">
-        {loading ? (
-          <ProductGridSkeleton />
-        ) : error ? (
-          <div className="text-sm text-red-600">{error}</div>
-        ) : items.length === 0 ? (
-          <div className="text-center py-24 text-gray-600">Aucune nouveauté trouvée pour la période sélectionnée.</div>
-        ) : (
-          <ProductGrid products={items} compact={compact} />
-        )}
-
-        {/* Pagination */}
-        <div className="mt-6 flex items-center justify-between">
-          <Button variant="outline" size="sm" disabled={page <= 1 || loading} onClick={prevPage}>
-            Précédent
-          </Button>
-          <span className="text-sm text-gray-600">Page {page}</span>
-          <Button size="sm" disabled={loading || items.length < pageSize} onClick={nextPage}>
-            Suivant
-          </Button>
-        </div>
-      </div>
-    </div>
-  )
-}
