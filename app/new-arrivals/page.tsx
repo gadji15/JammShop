@@ -12,9 +12,9 @@ export default async function NewArrivalsPage() {
   const initialView = preferred === "comfortable" ? "comfortable" : "compact"
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white overflow-x-hidden">
       {/* Hero/Header SSR for SEO */}
-      <section className="relative bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white">
+      <section className="relative overflow-x-clip bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white">
         <div className="absolute inset-0 opacity-15">
           <div className="absolute -top-24 -left-24 w-96 h-96 bg-white/10 rounded-full blur-3xl" />
           <div className="absolute top-1/2 right-0 w-80 h-80 bg-white/10 rounded-full blur-2xl" />
@@ -29,11 +29,19 @@ export default async function NewArrivalsPage() {
           </p>
 
           {/* CTA vers les promotions */}
-          <div className="mt-6 flex items-center justify-center gap-3">
-            <Button asChild variant="secondary" className="bg-white text-blue-700 hover:bg-gray-100">
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-3 max-w-full">
+            <Button
+              asChild
+              variant="secondary"
+              className="w-full sm:w-auto bg-white text-blue-700 hover:bg-gray-100 whitespace-normal break-words text-sm sm:text-base px-4 sm:px-5"
+            >
               <Link href="/deals">Profiter des promotions</Link>
             </Button>
-            <Button asChild variant="outline" className="border-white/70 text-white hover:bg-white/10">
+            <Button
+              asChild
+              variant="outline"
+              className="w-full sm:w-auto border-white/70 bg-transparent text-white hover:bg-white/10 hover:text-white whitespace-normal break-words text-sm sm:text-base px-4 sm:px-5"
+            >
               <Link href="/products?sort=newest">Parcourir tout le catalogue</Link>
             </Button>
           </div>
