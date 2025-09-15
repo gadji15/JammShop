@@ -285,123 +285,156 @@ export function Header() {
                     <span className="sr-only">Menu</span>
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="right" className="w-80 p-0" aria-describedby={undefined}>
-                  <SheetHeader className="p-6 border-b bg-gradient-to-r from-blue-50 to-purple-50">
-                    <SheetTitle className="sr-only">Menu mobile</SheetTitle>
-                    <SheetDescription className="sr-only">Navigation principale de JammShop</SheetDescription>
-                    <div className="flex items-center space-x-2">
-                      <div className="relative">
-                        <svg width="32" height="32" viewBox="0 0 32 32" className="drop-shadow-sm">
-                          <defs>
-                            <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                              <stop offset="0%" stopColor="#3B82F6" />
-                              <stop offset="50%" stopColor="#6366F1" />
-                              <stop offset="100%" stopColor="#8B5CF6" />
-                            </linearGradient>
-                          </defs>
-                          <rect width="32" height="32" rx="8" fill="url(#logoGradient)" />
-                          <path d="M8 12h16v2H8zm0 4h12v2H8zm0 4h8v2H8z" fill="white" opacity="0.9" />
-                          <circle cx="22" cy="20" r="3" fill="white" opacity="0.8" />
-                          <path d="M21 19l1 1 2-2" stroke="#3B82F6" strokeWidth="1.5" fill="none" />
-                        </svg>
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="font-bold text-xl bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                          JammShop
-                        </span>
-                        <span className="text-xs text-gray-500 -mt-1 hidden sm:block">Marketplace</span>
-                      </div>
-                    </div>
-                  </SheetHeader>
-                  <div className="flex flex-col h-full">
-
-                    {/* Scrollable Content */}
-                    <div className="flex-1 overflow-y-auto p-6">
-                      <div className="space-y-6">
-                        {/* Search Button */}
-                        <Button
-                          variant="outline"
-                          className="w-full justify-start bg-transparent"
-                          onClick={() => {
-                            setIsSearchOpen(true)
-                            setIsMenuOpen(false)
-                          }}
-                        >
-                          <Search className="h-4 w-4 mr-2" />
-                          Rechercher des produits
-                        </Button>
-
-                        {isAdmin && (
-                          <Button
-                            variant="outline"
-                            className="w-full justify-start bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
-                            asChild
-                          >
-                            <Link href="/admin" onClick={() => setIsMenuOpen(false)}>
-                              <Settings className="h-4 w-4 mr-2" />
-                              Administration
-                            </Link>
-                          </Button>
-                        )}
-
-                        {/* Navigation Links */}
-                        <div className="space-y-4">
-                          <Link
-                            href="/products"
-                            className="block text-lg font-medium text-gray-900 hover:text-blue-600 transition-colors"
-                            onClick={() => setIsMenuOpen(false)}
-                          >
-                            Produits
-                          </Link>
-
-                          <div className="space-y-3">
-                            <h3 className="text-lg font-medium text-gray-900">Catégories</h3>
-                            <div className="pl-4 space-y-3 max-h-48 overflow-y-auto">
-                              {categories.map((category) => (
-                                <Link
-                                  key={category.id}
-                                  href={`/categories/${category.slug}`}
-                                  className="block text-gray-700 hover:text-blue-600 transition-colors py-1"
-                                  onClick={() => setIsMenuOpen(false)}
-                                >
-                                  {category.name}
-                                </Link>
-                              ))}
-                            </div>
-                          </div>
-
-                          <Link
-                            href="/contact"
-                            className="block text-lg font-medium text-gray-900 hover:text-blue-600 transition-colors"
-                            onClick={() => setIsMenuOpen(false)}
-                          >
-                            Contact
-                          </Link>
-
-                          <Link
-                            href="/about"
-                            className="block text-lg font-medium text-gray-900 hover:text-blue-600 transition-colors"
-                            onClick={() => setIsMenuOpen(false)}
-                          >
-                            À propos
-                          </Link>
+                <SheetContent side="right" className="w-[88vw] max-w-sm p-0" aria-describedby={undefined}>
+                  <div className="flex h-dvh flex-col">
+                    {/* Header */}
+                    <SheetHeader className="px-4 pt-4 pb-3 border-b bg-gradient-to-r from-blue-50 to-purple-50">
+                      <SheetTitle className="sr-only">Menu mobile</SheetTitle>
+                      <SheetDescription className="sr-only">Navigation principale de JammShop</SheetDescription>
+                      <div className="flex items-center gap-2">
+                        <div className="relative">
+                          <svg width="32" height="32" viewBox="0 0 32 32" className="drop-shadow-sm">
+                            <defs>
+                              <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stopColor="#3B82F6" />
+                                <stop offset="50%" stopColor="#6366F1" />
+                                <stop offset="100%" stopColor="#8B5CF6" />
+                              </linearGradient>
+                            </defs>
+                            <rect width="32" height="32" rx="8" fill="url(#logoGradient)" />
+                            <path d="M8 12h16v2H8zm0 4h12v2H8zm0 4h8v2H8z" fill="white" opacity="0.9" />
+                            <circle cx="22" cy="20" r="3" fill="white" opacity="0.8" />
+                            <path d="M21 19l1 1 2-2" stroke="#3B82F6" strokeWidth="1.5" fill="none" />
+                          </svg>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="font-bold text-xl bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                            JammShop
+                          </span>
+                          <span className="text-xs text-gray-500 -mt-1 hidden sm:block">Marketplace</span>
                         </div>
                       </div>
-                    </div>
+                    </SheetHeader>
 
-                    {/* Footer - Auth Buttons */}
+                    {/* Scrollable Content */}
+                    <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-4">
+                      {/* Search Button */}
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start bg-white text-gray-800 hover:bg-gray-100"
+                        onClick={() => {
+                          setIsSearchOpen(true)
+                          setIsMenuOpen(false)
+                        }}
+                      >
+                        <Search className="h-4 w-4 mr-2" />
+                        Rechercher des produits
+                      </Button>
+
+                      {isAdmin && (
+                        <Button
+                          variant="outline"
+                          className="w-full justify-start bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
+                          asChild
+                        >
+                          <Link href="/admin" onClick={() => setIsMenuOpen(false)}>
+                            <Settings className="h-4 w-4 mr-2" />
+                            Administration
+                          </Link>
+                        </Button>
+                      )}
+
+                      {/* Primary Links */}
+                      <div className="space-y-2">
+                        <Link
+                          href="/products"
+                          className="block rounded-md px-3 py-2 text-base font-medium text-gray-900 hover:bg-gray-100"
+                          onClick={() => setIsMenuOpen(false)}
+                        >
+                          Produits
+                        </Link>
+                      </div>
+
+                      {/* Categories */}
+                      <div className="space-y-2">
+                        <div className="px-3 py-2 text-xs uppercase tracking-wide text-gray-500">Catégories</div>
+                        <div className="pl-1 space-y-1 max-h-48 overflow-y-auto">
+                          {categories.map((category) => (
+                            <Link
+                              key={category.id}
+                              href={`/categories/${category.slug}`}
+                              className="block rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                              onClick={() => setIsMenuOpen(false)}
+                            >
+                              {category.name}
+                            </Link>
+                          ))}
+                        </div>
+                        <Link
+                          href="/products"
+                          className="block rounded-md px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50"
+                          onClick={() => setIsMenuOpen(false)}
+                        >
+                          Voir toutes les catégories
+                        </Link>
+                      </div>
+
+                      {/* Discover */}
+                      <div className="space-y-1">
+                        <div className="px-3 py-2 text-xs uppercase tracking-wide text-gray-500">Découvrir</div>
+                        <Link
+                          href="/new-arrivals"
+                          className="block rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          onClick={() => setIsMenuOpen(false)}
+                        >
+                          Nouveautés
+                        </Link>
+                        <Link
+                          href="/deals"
+                          className="block rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          onClick={() => setIsMenuOpen(false)}
+                        >
+                          Offres
+                        </Link>
+                        <Link
+                          href="/brands"
+                          className="block rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          onClick={() => setIsMenuOpen(false)}
+                        >
+                          Marques
+                        </Link>
+                      </div>
+
+                      {/* Secondary */}
+                      <div className="space-y-1 pt-2">
+                        <Link
+                          href="/contact"
+                          className="block rounded-md px-3 py-2 text-base font-medium text-gray-900 hover:bg-gray-100"
+                          onClick={() => setIsMenuOpen(false)}
+                        >
+                          Contact
+                        </Link>
+                        <Link
+                          href="/about"
+                          className="block rounded-md px-3 py-2 text-base font-medium text-gray-900 hover:bg-gray-100"
+                          onClick={() => setIsMenuOpen(false)}
+                        >
+                          À propos
+                        </Link>
+                      </div>
+                    </nav>
+
+                    {/* Sticky Footer - Auth Buttons */}
                     {!user && (
-                      <div className="p-6 border-t bg-gray-50 space-y-3">
-                        <Button asChild className="w-full bg-transparent" variant="outline">
-                          <Link href="/auth/login" onClick={() => setIsMenuOpen(false)}>
-                            Connexion
+                      <div className="sticky bottom-0 bg-white border-t px-3 pt-3 pb-[calc(env(safe-area-inset-bottom,0px)+12px)]">
+                        <div className="flex gap-2">
+                          <Link href="/auth/login" className="flex-1" onClick={() => setIsMenuOpen(false)}>
+                            <Button variant="outline" className="w-full">Connexion</Button>
                           </Link>
-                        </Button>
-                        <Button asChild className="w-full bg-blue-600 hover:bg-blue-700">
-                          <Link href="/auth/register" onClick={() => setIsMenuOpen(false)}>
-                            Inscription
+                          <Link href="/auth/register" className="flex-1" onClick={() => setIsMenuOpen(false)}>
+                            <Button className="w-full bg-blue-600 hover:bg-blue-700">Inscription</Button>
                           </Link>
-                        </Button>
+                        </div>
                       </div>
                     )}
                   </div>
