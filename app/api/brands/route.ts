@@ -9,36 +9,34 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
 
   const q = (searchParams.get("q") || "").trim()
-  const type = (searchParams.get("type") || "").toLowerCase() // internal | alibaba | jumia | other
-  const sort = (searchParams.get("sort") || "name") as "name" | "count"
   const page = Math.max(1, Number(searchParams.get("page") || "1"))
   const pageSize = Math.min(60, Math.max(1, Number(searchParams.get("pageSize") || "24")))
+  const sort = (searchParams.get("sort") || "name") as "name" | "newest" | "oldest"
+
   const from = (page - 1) * pageSize
   const to = from + pageSize - 1
 
-  // Base query with product counts via foreign table relationship
-  let qb = supabase
-    .from("suppliers")
-    .select(
-      `
-      id, name, type, is_active, created_at,
-      products:products(count)
-    `,
-      { count: "exact" },
-    )
-    .eq("is_active", true)
+  // brands_agg view provides supplier_id, product_count and timestamps aggregated from products
+  let qb = supabase.from("brands_agg").select("*", { count: "exact" })
 
+  // As we don't have a suppliers table in schema listing, we can't search by brand name.
+  // We allow searching by supplier_id (UUID) prefix for now.
   if (q) {
-    qb = qb.ilike("name", `%${q}%`)
-  }
-  if (type && ["internal", "alibaba", "jumia", "other"].includes(type)) {
-    qb = qb.eq("type", type)
+    qb = qb.ilike("supplier_id::text", `%${q}%` as any)
   }
 
-  // Sorting (we will post-sort if sort=count because count is nested)
-  // For name sorting we can do at SQL level.
-  if (sort === "name") {
-    qb = qb.order("name", { ascending: true })
+  switch (sort) {
+    case "newest":
+      qb = qb.order("last_created_at", { ascending: false })
+      break
+    case "oldest":
+      qb = qb.order("first_created_at", { ascending: true })
+      break
+    case "name":
+    default:
+      // Fallback: order by supplier_id to simulate name ordering
+      qb = qb.order("supplier_id", { ascending: true })
+      break
   }
 
   const { data, count, error } = await qb.range(from, to)
@@ -47,23 +45,20 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
+  // Map to a uniform API shape
   const rows = (data || []).map((r: any) => ({
-    id: r.id,
-    name: r.name,
-    type: r.type,
-    created_at: r.created_at,
-    product_count: Array.isArray(r.products) && r.products[0] && typeof r.products[0].count === "number" ? r.products[0].count : 0,
+    id: r.supplier_id,
+    name: r.supplier_id, // Without a suppliers table, we expose the UUID as label. Can be enhanced later.
+    product_count: r.product_count,
+    first_created_at: r.first_created_at,
+    last_created_at: r.last_created_at,
   }))
 
-  // If sort by count is requested, sort in-memory (dataset already paginated).
-  // If precise server-side sort by count is needed, we can add a SQL view. For now keep it simple.
-  const items = sort === "count" ? rows.sort((a, b) => b.product_count - a.product_count) : rows
-
   return NextResponse.json({
-    items,
+    data: rows,
     page,
     pageSize,
-    total: count ?? items.length,
-    totalPages: Math.ceil((count ?? items.length) / pageSize),
+    total: count ?? 0,
+    totalPages: Math.ceil((count ?? 0) / pageSize),
   })
 }
