@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
+import type { Metadata } from "next"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { ProductGrid } from "@/components/product/product-grid"
 import { ProductGridSkeleton } from "@/components/product/product-loading"
@@ -34,6 +35,24 @@ type AnyProduct = {
 const DEFAULT_PAGE_SIZE = 24
 const MAX_FETCH_PAGE_SIZE = 60 // we fetch a single big page then filter client-side
 const DEFAULT_NEW_DAYS = Number(process.env.NEXT_PUBLIC_NEW_PRODUCT_DAYS || "7") || 7
+
+export const metadata: Metadata = {
+  title: "Offres et Promotions | JammShop",
+  description:
+    "Découvrez nos meilleures offres: réductions, nouveautés en promo, et produits en stock au meilleur prix.",
+  alternates: { canonical: "/deals" },
+  openGraph: {
+    title: "Offres et Promotions | JammShop",
+    description: "Réductions vérifiées et mises à jour régulièrement sur JammShop.",
+    url: "/deals",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Offres et Promotions | JammShop",
+    description: "Réductions vérifiées et mises à jour régulièrement sur JammShop.",
+  },
+}
 
 export default function DealsPage() {
   const router = useRouter()

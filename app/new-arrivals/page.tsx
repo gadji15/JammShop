@@ -1,10 +1,31 @@
 import { cookies } from "next/headers"
 import { Suspense } from "react"
+import type { Metadata } from "next"
 import NewArrivalsClient from "@/components/new-arrivals/new-arrivals-client"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 
 export const revalidate = 60
+
+export const metadata: Metadata = {
+  title: "Nouveautés | JammShop",
+  description:
+    "Découvrez les dernières nouveautés JammShop : produits fraîchement ajoutés, prêts à être expédiés. Parcourez les arrivées récentes et trouvez vos coups de cœur.",
+  alternates: { canonical: "/new-arrivals" },
+  openGraph: {
+    title: "Nouveautés | JammShop",
+    description:
+      "Découvrez les dernières nouveautés JammShop : produits fraîchement ajoutés, prêts à être expédiés.",
+    url: "/new-arrivals",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Nouveautés | JammShop",
+    description:
+      "Découvrez les dernières nouveautés JammShop : produits fraîchement ajoutés, prêts à être expédiés.",
+  },
+}
 
 export default async function NewArrivalsPage() {
   const cookieStore = await cookies()
