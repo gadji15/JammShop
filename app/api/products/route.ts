@@ -34,7 +34,11 @@ export async function GET(req: Request) {
     `,
       { count: "exact" },
     )
-    .eq(onSale ? undefined : "is_active", true as any)
+
+  // When querying the base table, enforce active products; products_on_sale view already enforces it
+  if (!onSale) {
+    qb = qb.eq("is_active", true)
+  }
 
   if (q) {
     qb = qb.or(`name.ilike.%${q}%,short_description.ilike.%${q}%`)
