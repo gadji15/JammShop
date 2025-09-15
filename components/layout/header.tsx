@@ -141,6 +141,32 @@ export function Header() {
                 </DropdownMenuContent>
               </DropdownMenu>
 
+              {/* Discover Dropdown to avoid clutter */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="text-gray-700 hover:text-blue-600 font-medium">
+                    Découvrir
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56">
+                  <DropdownMenuItem asChild>
+                    <Link href="/new-arrivals" className="cursor-pointer">
+                      Nouveautés
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/deals" className="cursor-pointer">
+                      Offres
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/brands" className="cursor-pointer">
+                      Marques
+                    </Link>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
               <Link href="/contact" className="text-gray-700 hover:text-blue-600 font-medium transition-colors">
                 Contact
               </Link>
