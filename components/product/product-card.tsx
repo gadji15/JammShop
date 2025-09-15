@@ -8,6 +8,7 @@ import { Heart, ShoppingCart, Star } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import { useMemo, useState } from "react"
+import { useCart } from "@/lib/hooks/use-cart"
 
 interface ProductCardProps {
   product: ProductWithCategory
@@ -19,12 +20,16 @@ interface ProductCardProps {
 export function ProductCard({ product, onAddToCart, onToggleWishlist, compact = false }: ProductCardProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [isWishlisted, setIsWishlisted] = useState(false)
+  const cart = useCart()
 
   const handleAddToCart = async () => {
-    if (!onAddToCart) return
     setIsLoading(true)
     try {
-      await onAddToCart(product.id)
+      if (onAddToCart) {
+        await onAddToCart(product.id)
+      } else {
+        await cart.addToCart(product.id, 1)
+      }
     } finally {
       setIsLoading(false)
     }

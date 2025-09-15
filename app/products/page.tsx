@@ -223,9 +223,14 @@ export default function ProductsPage() {
     router.push(buildUrl({ ...cleared, page: 1, pageSize: DEFAULT_PAGE_SIZE }))
   }
 
+  const cart = useCart()
   const handleAddToCart = async (productId: string) => {
-    // TODO: Implement add to cart functionality
-    console.log("Add to cart:", productId)
+    try {
+      await cart.addToCart(productId, 1)
+    } catch (e) {
+      console.error("Add to cart failed:", e)
+      // Optionally show a toast here if your toast system is available
+    }
   }
 
   const handleToggleWishlist = async (productId: string) => {
