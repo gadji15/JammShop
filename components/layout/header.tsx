@@ -17,6 +17,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { SearchModal } from "@/components/search/search-modal"
+import { useCart } from "@/lib/hooks/use-cart"
 
 export function Header() {
   const [user, setUser] = useState<any>(null)
@@ -28,6 +29,7 @@ export function Header() {
   const { categories } = useCategories()
   const router = useRouter()
   const supabase = createClient()
+  const cart = useCart()
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -52,6 +54,11 @@ export function Header() {
 
     return () => subscription.unsubscribe()
   }, [supabase.auth])
+
+  // Sync cart badge from cart hook
+  useEffect(() => {
+    setCartItemsCount(cart.getTotalItems ? cart.getTotalItems() : (cart.items?.reduce?.((t: number, it: any) => t + (it?.quantity || 0), 0) || 0))
+  }, [cart.items, cart.getTotalItems])
 
   // Keyboard shortcuts: Cmd/Ctrl+K and '/' to open search
   useEffect(() => {
