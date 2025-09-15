@@ -5,21 +5,21 @@ import BrandsClient from "@/components/brands/brands-client"
 export const revalidate = 60
 
 export const metadata: Metadata = {
-  title: "Marques & Fournisseurs | JammShop",
-  description: "Découvrez toutes les marques et fournisseurs présents sur JammShop. Recherchez, filtrez, et explorez les catalogues.",
+  title: "Marques | JammShop",
+  description: "Découvrez toutes les marques présentes sur JammShop. Recherchez, filtrez, explorez les catalogues par marque.",
   alternates: { canonical: "/brands" },
   openGraph: {
-    title: "Marques & Fournisseurs | JammShop",
+    title: "Marques | JammShop",
     description: "Toutes les marques disponibles sur JammShop.",
     url: "/brands",
     type: "website",
-    images: [{ url: "/api/og?title=Marques%20JammShop&subtitle=Explorez%20nos%20fournisseurs" }],
+    images: [{ url: "/api/og?title=Marques%20JammShop&subtitle=Explorez%20nos%20marques" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Marques & Fournisseurs | JammShop",
+    title: "Marques | JammShop",
     description: "Toutes les marques disponibles sur JammShop.",
-    images: ["/api/og?title=Marques%20JammShop&subtitle=Explorez%20nos%20fournisseurs"],
+    images: ["/api/og?title=Marques%20JammShop&subtitle=Explorez%20nos%20marques"],
   },
 }
 
@@ -36,7 +36,7 @@ export default function BrandsPage() {
             JammShop — Marques
           </span>
           <h1 className="mt-4 text-4xl md:text-6xl font-extrabold tracking-tight text-balance">
-            Marques & Fournisseurs
+            Marques
           </h1>
           <p className="mt-3 md:mt-4 text-base md:text-lg text-white/90 max-w-2xl mx-auto">
             Explorez toutes les marques disponibles et accédez à leurs produits.
