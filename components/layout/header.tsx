@@ -84,6 +84,34 @@ export function Header() {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
+  // Wishlist count from localStorage (fallback until a hook exists)
+  useEffect(() => {
+    const readWishlist = () => {
+      try {
+        // Try common keys
+        const raw = localStorage.getItem("wishlist") || localStorage.getItem("wishlistItems") || "[]"
+        const arr = JSON.parse(raw)
+        if (Array.isArray(arr)) {
+          // Support arrays of ids or objects with id
+          const count = arr.length
+          setWishlistCount(Number.isFinite(count) ? count : 0)
+        } else {
+          setWishlistCount(0)
+        }
+      } catch {
+        setWishlistCount(0)
+      }
+    }
+    readWishlist()
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === "wishlist" || e.key === "wishlistItems") {
+        readWishlist()
+      }
+    }
+    window.addEventListener("storage", onStorage)
+    return () => window.removeEventListener("storage", onStorage)
+  }, [])
+
   const fetchUserProfile = async (userId: string) => {
     try {
       const { data, error } = await supabase.from("profiles").select("*").eq("id", userId).single()
@@ -236,18 +264,17 @@ export function Header() {
               )}
 
               {/* Wishlist with badge (localStorage-based fallback) */}
-             <lButton variant="ghost" size="icon" asChild className="hidden sm:flex relative">
-               <lLink href="/wishlist">
-                 < Heart className="h-4 w-4 sm:h-5 sm:w-5" />
+              <Button variant="ghost" size="icon" asChild className="hidden sm:flex relative">
+                <Link href="/wishlist">
+                  <Heart className="h-4 w-4 sm:h-5 sm:w-5" />
                   {wishlistCount > 0 && (
-                   <tBadge className="absolute -top-1 -right-1 h-4 w-4 sm:h-5 sm:w-5 rounded-full p-0 flex items-center justify-center text-xs bg-pink-600">
+                    <Badge className="absolute -top-1 -right-1 h-4 w-4 sm:h-5 sm:w-5 rounded-full p-0 flex items-center justify-center text-[10px] sm:text-xs bg-pink-600">
                       {wishlistCount}
-                  </  Badge>
+                    </Badge>
                   )}
-                 < span className="sr-only">Liste de souhai</tsspan>
-              </  Link>
-            </  But_codetonewn</>
-on>
+                  <span className="sr-only">Liste de souhaits</span>
+                </Link>
+              </Button>
 
               {/* Cart */}
               <Button variant="ghost" size="icon" asChild className="relative">
