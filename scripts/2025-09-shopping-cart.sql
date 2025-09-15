@@ -3,6 +3,9 @@
 
 begin;
 
+-- Required for gen_random_uuid
+create extension if not exists pgcrypto;
+
 create table if not exists public.shopping_cart (
   id uuid not null default gen_random_uuid() primary key,
   user_id uuid not null references auth.users(id) on delete cascade,
