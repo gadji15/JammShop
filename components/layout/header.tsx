@@ -24,6 +24,7 @@ export function Header() {
   const [cartItemsCount, setCartItemsCount] = useState(0)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
+  const [hasShadow, setHasShadow] = useState(false)
   const { categories } = useCategories()
   const router = useRouter()
   const supabase = createClient()
@@ -51,6 +52,29 @@ export function Header() {
 
     return () => subscription.unsubscribe()
   }, [supabase.auth])
+
+  // Keyboard shortcuts: Cmd/Ctrl+K and '/' to open search
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const isCmdK = (e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')
+      const isSlash = !e.ctrlKey && !e.metaKey && e.key === '/'
+      if (isCmdK || isSlash) {
+        e.preventDefault()
+        setIsSearchOpen(true)
+        setIsMenuOpen(false)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+
+  // Shadow on scroll for better readability
+  useEffect(() => {
+    const onScroll = () => setHasShadow(window.scrollY > 4)
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
 
   const fetchUserProfile = async (userId: string) => {
     try {
@@ -80,7 +104,7 @@ export function Header() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
+      <header className={`sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 ${hasShadow ? "shadow-sm" : ""}`}>
         <div className="container mx-auto px-4">
           {/* Top bar */}
           <div className="flex h-16 items-center justify-between">
