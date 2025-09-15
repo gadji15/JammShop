@@ -18,6 +18,7 @@ import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { SearchModal } from "@/components/search/search-modal"
 import { useCart } from "@/lib/hooks/use-cart"
+import { CartDrawer } from "@/components/cart/cart-drawer"
 
 export function Header() {
   const [user, setUser] = useState<any>(null)
@@ -508,6 +509,9 @@ export function Header() {
           </div>
         </div>
       </header>
+
+      {/* Cart Drawer */}
+      <CartDrawer open={cartOpen} onOpenChange={setCartOpen} />
 
       {/* Search Modal */}
       <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} onSearch={handleSearch} />
