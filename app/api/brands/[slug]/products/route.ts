@@ -15,16 +15,11 @@ export async function GET(req: Request, { params }: { params: { slug: string } }
   const minPrice = searchParams.get("minPrice") ? Number(searchParams.get("minPrice")) : undefined
   const maxPrice = searchParams.get("maxPrice") ? Number(searchParams.get("maxPrice")) : undefined
 
-  // Resolve brand by slug or id
+  // Resolve brand by slug from brands_attr
   const key = params.slug
-  let { data: brand, error: bErr } = await supabase.from("brands_full").select("id, name, slug").eq("slug", key).maybeSingle()
+  let { data: brand, error: bErr } = await supabase.from("brands_attr").select("name, slug").eq("slug", key).maybeSingle()
   if (bErr) return NextResponse.json({ error: bErr.message }, { status: 500 })
-  if (!brand) {
-    const { data: byId, error: e2 } = await supabase.from("brands_full").select("id, name, slug").eq("id", key).maybeSingle()
-    if (e2) return NextResponse.json({ error: e2.message }, { status: 500 })
-    if (!byId) return NextResponse.json({ error: "Brand not found" }, { status: 404 })
-    brand = byId
-  }
+  if (!brand) return NextResponse.json({ error: "Brand not found" }, { status: 404 })
 
   const from = (page - 1) * pageSize
   const to = from + pageSize - 1

@@ -16,8 +16,9 @@ export async function GET(req: Request) {
   const from = (page - 1) * pageSize
   const to = from + pageSize - 1
 
-  // brands_full exposes name/slug/logo with counts (joined brands + brands_agg)
-  let qb = supabase.from("brands_full").select("*", { count: "exact" })
+  // Use brands_full if it exists, otherwise fallback to brands_attr (from attributes only)
+  // Here we query brands_attr directly to match your current schema (no suppliers/brands table).
+  let qb = supabase.from("brands_attr").select("*", { count: "exact" })
 
   if (q) {
     qb = qb.ilike("name", `%${q}%`)
