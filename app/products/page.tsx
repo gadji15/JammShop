@@ -12,6 +12,8 @@ import { Filter } from "lucide-react"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 
+const DEFAULT_NEW_DAYS = Number(process.env.NEXT_PUBLIC_NEW_PRODUCT_DAYS || "7") || 7
+
 type ApiResp = {
   data: ProductWithCategory[]
   page: number
@@ -59,6 +61,8 @@ export default function ProductsPage() {
     const maxPrice = Number(sp.get("maxPrice") || "1000")
     const inStock = ["1", "true", "yes"].includes((sp.get("inStock") || "").toLowerCase())
     const featured = ["1", "true", "yes"].includes((sp.get("featured") || "").toLowerCase())
+    const onlyNew = ["1", "true", "yes"].includes((sp.get("onlyNew") || "").toLowerCase())
+    const newDays = Math.max(1, Number(sp.get("newDays") || DEFAULT_NEW_DAYS))
     const sort = (sp.get("sort") || "newest") as ProductFiltersType["sortBy"]
     const pg = Math.max(1, Number(sp.get("page") || "1"))
     const ps = Math.min(60, Math.max(1, Number(sp.get("pageSize") || DEFAULT_PAGE_SIZE)))

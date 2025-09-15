@@ -15,6 +15,8 @@ export async function GET(req: Request) {
   const inStock = ["1", "true", "yes"].includes((searchParams.get("inStock") || "").toLowerCase())
   const featured = ["1", "true", "yes"].includes((searchParams.get("featured") || "").toLowerCase())
   const onSale = ["1", "true", "yes"].includes((searchParams.get("onSale") || "").toLowerCase())
+  const onlyNew = ["1", "true", "yes"].includes((searchParams.get("onlyNew") || "").toLowerCase())
+  const newDays = Math.max(1, Number(searchParams.get("newDays") || "7"))
   const sort = searchParams.get("sort") || "newest"
   const page = Math.max(1, Number(searchParams.get("page") || "1"))
   const pageSize = Math.min(60, Math.max(1, Number(searchParams.get("pageSize") || "20")))
@@ -78,16 +80,22 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  // If onSale requested, filter in memory since column-to-column comparison isn't native in builder
-  const filtered = onSale
-    ? (data || []).filter((p: any) => typeof p.compare_price === "number" && typeof p.price === "number" && p.compare_price > p.price)
-    : data || []
+  // Post-filtering: onSale via column-to-column, and onlyNew by date window
+  let filtered = data || []
+  if (onSale) {
+    filtered = filtered.filter((p: any) => typeof p.compare_price === "number" && typeof p.price === "number" && p.compare_price > p.price)
+  }
+  if (onlyNew) {
+    const now = Date.now()
+    const windowMs = newDays * 24 * 60 * 60 * 1000
+    filtered = filtered.filter((p: any) => p.created_at && Number.isFinite(Date.parse(p.created_at)) && (now - Date.parse(p.created_at) <= windowMs))
+  }
 
   return NextResponse.json({
     data: filtered,
     page,
     pageSize,
-    total: onSale ? filtered.length : count ?? 0,
-    totalPages: Math.ceil((onSale ? filtered.length : count ?? 0) / pageSize),
+    total: (onSale || onlyNew) ? filtered.length : count ?? 0,
+    totalPages: Math.ceil(((onSale || onlyNew) ? filtered.length : count ?? 0) / pageSize),
   })
 }
