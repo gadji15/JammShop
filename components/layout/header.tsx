@@ -23,6 +23,7 @@ export function Header() {
   const [user, setUser] = useState<any>(null)
   const [userProfile, setUserProfile] = useState<any>(null)
   const [cartItemsCount, setCartItemsCount] = useState(0)
+  const [wishlistCount, setWishlistCount] = useState(0)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [hasShadow, setHasShadow] = useState(false)
@@ -234,20 +235,26 @@ export function Header() {
                 </>
               )}
 
-              {/* Wishlist */}
-              <Button variant="ghost" size="icon" asChild className="hidden sm:flex">
-                <Link href="/wishlist">
-                  <Heart className="h-4 w-4 sm:h-5 sm:w-5" />
-                  <span className="sr-only">Liste de souhaits</span>
-                </Link>
-              </Button>
+              {/* Wishlist with badge (localStorage-based fallback) */}
+             <lButton variant="ghost" size="icon" asChild className="hidden sm:flex relative">
+               <lLink href="/wishlist">
+                 < Heart className="h-4 w-4 sm:h-5 sm:w-5" />
+                  {wishlistCount > 0 && (
+                   <tBadge className="absolute -top-1 -right-1 h-4 w-4 sm:h-5 sm:w-5 rounded-full p-0 flex items-center justify-center text-xs bg-pink-600">
+                      {wishlistCount}
+                  </  Badge>
+                  )}
+                 < span className="sr-only">Liste de souhai</tsspan>
+              </  Link>
+            </  But_codetonewn</>
+on>
 
               {/* Cart */}
-              <Button variant="ghost" size="icon" className="relative" asChild>
+              <Button variant="ghost" size="icon" asChild className="relative">
                 <Link href="/cart">
                   <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />
                   {cartItemsCount > 0 && (
-                    <Badge className="absolute -top-1 -right-1 h-4 w-4 sm:h-5 sm:w-5 rounded-full p-0 flex items-center justify-center text-xs bg-blue-600">
+                    <Badge className="absolute -top-1 -right-1 h-4 w-4 sm:h-5 sm:w-5 rounded-full p-0 flex items-center justify-center text-[10px] sm:text-xs bg-blue-600">
                       {cartItemsCount}
                     </Badge>
                   )}
