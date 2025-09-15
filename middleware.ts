@@ -14,6 +14,27 @@ export async function middleware(request: NextRequest) {
   // Always refresh session cookies first
   let response = await updateSession(request)
 
+  // A/B cookie for Hero: set/override from URL (?ab=hero1|hero2) or once if missing
+  const abParam = request.nextUrl.searchParams.get("ab")
+  const abCookie = request.cookies.get("ab_variant")?.value
+  let picked = abCookie
+
+  if (abParam === "hero1" || abParam === "hero2") {
+    picked = abParam
+  } else if (!abCookie || (abCookie !== "hero1" && abCookie !== "hero2")) {
+    picked = Math.random() < 0.5 ? "hero1" : "hero2"
+  }
+
+  if (picked && picked !== abCookie) {
+    response = response ?? NextResponse.next({ request })
+    response.cookies.set("ab_variant", picked, {
+      path: "/",
+      httpOnly: false,
+      sameSite: "lax",
+      maxAge: 60 * 60 * 24 * 180, // 180 days
+    })
+  }
+
   const { pathname } = request.nextUrl
 
   // Guard only for /admin paths
@@ -48,7 +69,10 @@ export async function middleware(request: NextRequest) {
       url.pathname = "/auth/login"
       url.searchParams.set("redirect", pathname)
       const redirect = NextResponse.redirect(url)
-      redirect.cookies.setAll(response.cookies.getAll())
+      // copy cookies from response to redirect
+      for (const { name, value } of response.cookies.getAll()) {
+        redirect.cookies.set(name, value)
+      }
       return redirect
     }
 
@@ -61,7 +85,9 @@ export async function middleware(request: NextRequest) {
     // Admin access required for all /admin
     if (!isAdmin) {
       const redirect = NextResponse.redirect(new URL("/", request.url))
-      redirect.cookies.setAll(response.cookies.getAll())
+      for (const { name, value } of response.cookies.getAll()) {
+        redirect.cookies.set(name, value)
+      }
       return redirect
     }
 
@@ -72,7 +98,9 @@ export async function middleware(request: NextRequest) {
 
     if (isSuperAdminSection && !isSuperAdmin) {
       const redirect = NextResponse.redirect(new URL("/admin", request.url))
-      redirect.cookies.setAll(response.cookies.getAll())
+      for (const { name, value } of response.cookies.getAll()) {
+        redirect.cookies.set(name, value)
+      }
       return redirect
     }
   }
