@@ -11,6 +11,8 @@ import type { ProductWithCategory } from "@/lib/types/database"
 import { Filter } from "lucide-react"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { useCart } from "@/lib/hooks/use-cart"
+import { useAuthModal } from "@/lib/hooks/use-auth-modal"
 
 const DEFAULT_NEW_DAYS = Number(process.env.NEXT_PUBLIC_NEW_PRODUCT_DAYS || "7") || 7
 
