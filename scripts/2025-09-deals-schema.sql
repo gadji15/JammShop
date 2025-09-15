@@ -25,12 +25,11 @@ as
 select
   p.*
 from public.products as p
-cross join lateral (
-  coalesce(p.compare_price, p.compare_at_price) as cmp
-) as t(cmp)
 where
   p.is_active = true
   and p.price is not null
+  and coalesce(p.compare_price, p.compare_at_price) is not null
+  and.price is not null
   and t.cmp is not null
   and t.cmp > p.price
   and (p.promo_start is null or p.promo_start <= now())
