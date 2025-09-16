@@ -14,7 +14,7 @@ async function requireAdmin() {
   return { supabase, user, profile }
 }
 
-// GET /api/admin/orders?page=&pageSize=&q=&status=&sort=&order=
+// GET /api/admin/orders?page=&pageSize=&q=&status=&payment=&start=&end=&sort=&order=
 export async function GET(req: Request) {
   const { supabase, user, profile } = await requireAdmin()
   if (!user || !profile || !["admin", "super_admin"].includes(profile.role)) {
@@ -26,6 +26,9 @@ export async function GET(req: Request) {
   const pageSize = Math.min(100, Math.max(1, parseInt(url.searchParams.get("pageSize") || "20", 10)))
   const q = (url.searchParams.get("q") || "").trim()
   const status = url.searchParams.get("status") || ""
+  const payment = url.searchParams.get("payment") || ""
+  const start = url.searchParams.get("start") // ISO date string
+  const end = url.searchParams.get("end") // ISO date string
   const sort = url.searchParams.get("sort") || "created_at"
   const order = (url.searchParams.get("order") || "desc").toLowerCase() === "asc" ? "asc" : "desc"
 
@@ -48,8 +51,17 @@ export async function GET(req: Request) {
   if (status && status !== "all") {
     query = query.eq("status", status)
   }
+  if (payment && payment !== "all") {
+    query = query.eq("payment_status", payment)
+  }
+  if (start) {
+    query = query.gte("created_at", start)
+  }
+  if (end) {
+    query = query.lte("created_at", end)
+  }
 
-  const sortable = new Set(["created_at", "total_amount", "status", "payment_status"])
+  const sortable = new Set(["created_at", "total_amount", "status", "payment_status", "order_number"])
   const sortKey = sortable.has(sort) ? sort : "created_at"
   query = query.order(sortKey, { ascending: order === "asc" })
 
