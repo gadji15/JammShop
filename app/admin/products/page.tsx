@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import type { ProductWithDetails } from "@/lib/types/database"
 import { Edit, Eye, Plus, Search, Trash2 } from "lucide-react"
 import Image from "next/image"
@@ -28,6 +29,23 @@ export default function AdminProductsPage() {
   const [sort, setSort] = useState("created_at")
   const [order, setOrder] = useState<Order>("desc")
   const [total, setTotal] = useState(0)
+
+  // Bulk selection
+  const [selected, setSelected] = useState<string[]>([])
+
+  // Edit drawer
+  const [editOpen, setEditOpen] = useState(false)
+  const [editItem, setEditItem] = useState<any | null>(null)
+  const [editSaving, setEditSaving] = useState(false)
+  const [editForm, setEditForm] = useState({
+    name: "",
+    short_description: "",
+    price: "",
+    compare_price: "",
+    stock_quantity: "",
+    is_active: false as boolean,
+    is_featured: false as boolean,
+  })
 
   const totalPages = useMemo(() => Math.max(1, Math.ceil(total / pageSize)), [total, pageSize])
 
@@ -53,10 +71,12 @@ export default function AdminProductsPage() {
       const json = await res.json()
       setProducts(json.data || [])
       setTotal(json.total || 0)
+      setSelected([]) // reset selection when data changes
     } catch (e: any) {
       setError(e?.message || "Erreur")
       setProducts([])
       setTotal(0)
+      setSelected([])
     } finally {
       setLoading(false)
     }
@@ -94,6 +114,101 @@ export default function AdminProductsPage() {
     }
   }
 
+  const toggleSelected = (id: string) => {
+    setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
+  }
+
+  const selectAllPage = () => {
+    const ids = products.map((p: any) => p.id)
+    const allSelected = ids.every((id) => selected.includes(id))
+    if (allSelected) {
+      setSelected((prev) => prev.filter((id) => !ids.includes(id)))
+    } else {
+      // add missing
+      setSelected((prev) => Array.from(new Set([...prev, ...ids])))
+    }
+  }
+
+  const runBulk = async (action: string) => {
+    if (selected.length === 0) {
+      alert("Sélectionnez au moins un produit.")
+      return
+    }
+    let body: any = { ids: selected, action }
+    if (action === "applyDiscountPercent") {
+      const input = window.prompt("Pourcentage de remise (%)", "10")
+      const percent = Number(input)
+      if (!Number.isFinite(percent) || percent <= 0 || percent >= 100) {
+        alert("Pourcentage invalide.")
+        return
+      }
+      body.percent = percent
+    }
+    if (action === "delete" && !confirm(`Supprimer ${selected.length} produit(s) ?`)) return
+    try {
+      const res = await fetch("/api/admin/products/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      })
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}))
+        throw new Error(j?.error || "Action impossible")
+      }
+      await fetchProducts()
+      alert("Action exécutée.")
+    } catch (e) {
+      console.error(e)
+      alert("Erreur lors de l'action.")
+    }
+  }
+
+  const openEdit = (p: any) => {
+    setEditItem(p)
+    setEditForm({
+      name: p.name || "",
+      short_description: p.short_description || "",
+      price: String(p.price ?? ""),
+      compare_price: String(p.compare_price ?? ""),
+      stock_quantity: String(p.stock_quantity ?? ""),
+      is_active: !!p.is_active,
+      is_featured: !!p.is_featured,
+    })
+    setEditOpen(true)
+  }
+
+  const saveEdit = async () => {
+    if (!editItem) return
+    setEditSaving(true)
+    try {
+      const payload: any = {
+        name: editForm.name,
+        short_description: editForm.short_description,
+        price: editForm.price ? Number(editForm.price) : undefined,
+        compare_price: editForm.compare_price ? Number(editForm.compare_price) : null,
+        stock_quantity: editForm.stock_quantity ? Number(editForm.stock_quantity) : undefined,
+        is_active: editForm.is_active,
+        is_featured: editForm.is_featured,
+      }
+      const res = await fetch(`/api/admin/products/${editItem.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      })
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}))
+        throw new Error(j?.error || "Sauvegarde impossible")
+      }
+      await fetchProducts()
+      setEditOpen(false)
+    } catch (e) {
+      console.error(e)
+      alert("Erreur lors de la sauvegarde")
+    } finally {
+      setEditSaving(false)
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -123,6 +238,7 @@ export default function AdminProductsPage() {
               />
             </div>
 
+            {/* Quick filters */}
             <div className="flex gap-2">
               <Button
                 variant={active === "1" ? "default" : "outline"}
@@ -162,7 +278,30 @@ export default function AdminProductsPage() {
               </Button>
             </div>
 
-            <div className="flex items-center gap-2 ml-auto">
+            {/* Bulk actions */}
+            <div className="flex flex-wrap gap-2 md:ml-auto">
+              <Button variant="outline" onClick={selectAllPage}>Sélection page</Button>
+              <Button variant="outline" onClick={() => runBulk("setActive")} disabled={selected.length === 0}>
+                Activer
+              </Button>
+              <Button variant="outline" onClick={() => runBulk("setInactive")} disabled={selected.length === 0}>
+                Désactiver
+              </Button>
+              <Button variant="outline" onClick={() => runBulk("setFeatured")} disabled={selected.length === 0}>
+                Vedette +
+              </Button>
+              <Button variant="outline" onClick={() => runBulk("unsetFeatured")} disabled={selected.length === 0}>
+                Vedette -
+              </Button>
+              <Button variant="outline" onClick={() => runBulk("applyDiscountPercent")} disabled={selected.length === 0}>
+                Remise %
+              </Button>
+              <Button variant="outline" onClick={() => runBulk("resetPromotions")} disabled={selected.length === 0}>
+                Reset promos
+              </Button>
+              <Button variant="destructive" onClick={() => runBulk("delete")} disabled={selected.length === 0}>
+                Supprimer
+              </Button>
               <Button
                 variant="outline"
                 onClick={() => {
@@ -187,6 +326,14 @@ export default function AdminProductsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-8">
+                    <input
+                      type="checkbox"
+                      aria-label="Tout sélectionner"
+                      onChange={selectAllPage}
+                      checked={products.length > 0 && products.every((p: any) => selected.includes(p.id))}
+                    />
+                  </TableHead>
                   <TableHead
                     className="cursor-pointer"
                     onClick={() => toggleSort("name")}
@@ -218,20 +365,28 @@ export default function AdminProductsPage() {
                 {loading ? (
                   [...Array(6)].map((_, i) => (
                     <TableRow key={i} className="animate-pulse">
-                      <TableCell colSpan={7}>
+                      <TableCell colSpan={8}>
                         <div className="h-10 bg-gray-100 rounded" />
                       </TableCell>
                     </TableRow>
                   ))
                 ) : products.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7}>
+                    <TableCell colSpan={8}>
                       <div className="text-center py-8 text-gray-500">Aucun produit trouvé</div>
                     </TableCell>
                   </TableRow>
                 ) : (
                   products.map((product: any) => (
                     <TableRow key={product.id}>
+                      <TableCell className="w-8">
+                        <input
+                          type="checkbox"
+                          aria-label="Sélectionner"
+                          checked={selected.includes(product.id)}
+                          onChange={() => toggleSelected(product.id)}
+                        />
+                      </TableCell>
                       <TableCell>
                         <div className="flex items-center space-x-3">
                           <div className="w-12 h-12 relative rounded-md overflow-hidden bg-gray-100">
@@ -287,10 +442,8 @@ export default function AdminProductsPage() {
                               <Eye className="h-4 w-4" />
                             </Link>
                           </Button>
-                          <Button variant="ghost" size="icon" asChild>
-                            <Link href={`/admin/products/${product.id}/edit`}>
-                              <Edit className="h-4 w-4" />
-                            </Link>
+                          <Button variant="ghost" size="icon" onClick={() => openEdit(product)}>
+                            <Edit className="h-4 w-4" />
                           </Button>
                           <Button
                             variant="ghost"
@@ -347,6 +500,86 @@ export default function AdminProductsPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Edit Drawer */}
+      <Sheet open={editOpen} onOpenChange={setEditOpen}>
+        <SheetContent side="right" className="w-full sm:max-w-md">
+          <SheetHeader>
+            <SheetTitle>Éditer le produit</SheetTitle>
+          </SheetHeader>
+          <div className="mt-4 space-y-3">
+            <div>
+              <label className="text-sm font-medium">Nom</label>
+              <Input
+                value={editForm.name}
+                onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Description courte</label>
+              <Input
+                value={editForm.short_description}
+                onChange={(e) => setEditForm((f) => ({ ...f, short_description: e.target.value }))}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-sm font-medium">Prix</label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={editForm.price}
+                  onChange={(e) => setEditForm((f) => ({ ...f, price: e.target.value }))}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Prix comparé</label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={editForm.compare_price}
+                  onChange={(e) => setEditForm((f) => ({ ...f, compare_price: e.target.value }))}
+                />
+              </div>
+            </div>
+            <div>
+              <label className="text-sm font-medium">Stock</label>
+              <Input
+                type="number"
+                value={editForm.stock_quantity}
+                onChange={(e) => setEditForm((f) => ({ ...f, stock_quantity: e.target.value }))}
+              />
+            </div>
+            <div className="flex items-center gap-4">
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={editForm.is_active}
+                  onChange={(e) => setEditForm((f) => ({ ...f, is_active: e.target.checked }))}
+                />
+                Actif
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={editForm.is_featured}
+                  onChange={(e) => setEditForm((f) => ({ ...f, is_featured: e.target.checked }))}
+                />
+                Vedette
+              </label>
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <Button onClick={saveEdit} disabled={editSaving} className="bg-blue-600 hover:bg-blue-700">
+                {editSaving ? "Enregistrement..." : "Enregistrer"}
+              </Button>
+              <Button variant="outline" onClick={() => setEditOpen(false)}>
+                Annuler
+              </Button>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   )
 }
