@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useExternalSuppliers } from "@/lib/hooks/use-external-suppliers"
-import { Search, Download, RefreshCw, Package, AlertCircle, CheckCircle, Link2, Percent } from "lucide-react"
+import { Search, Download, RefreshCw, Package, AlertCircle, CheckCircle, Link2, Percent, Clock } from "lucide-react"
 import { toast } from "sonner"
 
 interface ExternalProduct {
@@ -23,8 +23,10 @@ interface ExternalProduct {
   stock_quantity?: number
 }
 
-export default function ExternalImportsPage() {
-  const [searchQuery, setSearchQuery] = useState("")
+function JobsHistory() {
+  const [jobs, setJobs] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const  const [searchQuery, setSearchQuery] = useState("")
   const [searchResults, setSearchResults] = useState<ExternalProduct[]>([])
   const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set())
   const [searching, setSearching] = useState(false)
@@ -335,6 +337,19 @@ export default function ExternalImportsPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Jobs history */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Clock className="h-5 w-5 mr-2" />
+            Historique des imports
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <JobsHistory />
+        </CardContent>
+      </Card>
 
       {/* Info Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
