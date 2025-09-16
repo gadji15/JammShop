@@ -97,10 +97,22 @@ export default function ExternalImportsPage() {
       return
     }
 
-    const productsToImport = searchResults.filter((p) => selectedProducts.has(p.external_id))
+    const productsToImport = searchResults.filter((p) => p && selectedProducts.has(p.external_id))
 
     try {
-      const result = await importProducts(activeSupplier, searchQuery, productsToImport)
+      const result = await importProducts(
+        activeSupplier,
+        searchQuery,
+        productsToImport,
+        {
+          strategy: marginFixed > 0 ? "hybrid" : "percent",
+          percent: marginPercent,
+          fixed: marginFixed,
+          minMargin: 0,
+          roundTo,
+          psychological,
+        }
+      )
 
       if (result.success > 0) {
         setSelectedProducts(new Set())
