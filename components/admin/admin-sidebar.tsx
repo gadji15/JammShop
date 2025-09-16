@@ -34,13 +34,19 @@ const navigation = [
   { name: "Paramètres", href: "/admin/settings", icon: Settings },
 ]
 
-export function AdminSidebar() {
+type SidebarProps = {
+  disableAutoCollapse?: boolean
+  className?: string
+}
+
+export function AdminSidebar({ disableAutoCollapse = false, className }: SidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
   const [isCollapsed, setIsCollapsed] = useState(false)
 
   useEffect(() => {
+    if (disableAutoCollapse) return
     const handleResize = () => {
       if (window.innerWidth < 1024) {
         setIsCollapsed(true)
@@ -52,7 +58,7 @@ export function AdminSidebar() {
     handleResize()
     window.addEventListener("resize", handleResize)
     return () => window.removeEventListener("resize", handleResize)
-  }, [])
+  }, [disableAutoCollapse])
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
@@ -64,6 +70,7 @@ export function AdminSidebar() {
       className={cn(
         "flex h-full flex-col bg-gray-900 text-white transition-all duration-300 ease-in-out",
         isCollapsed ? "w-16" : "w-64",
+        className,
       )}
     >
       {/* Logo */}
@@ -86,7 +93,7 @@ export function AdminSidebar() {
       <nav className="flex-1 px-2 py-4 overflow-y-auto">
         <ul className="space-y-1">
           {navigation.map((item) => {
-            const isActive = pathname === item.href
+            const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
             return (
               <li key={item.name}>
                 <Link
