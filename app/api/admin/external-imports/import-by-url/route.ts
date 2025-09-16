@@ -67,13 +67,23 @@ async function uploadExternalImage(
     const ab = await res.arrayBuffer()
     const ext = contentType.includes("png") ? "png" : contentType.includes("webp") ? "webp" : "jpg"
     const filename = `${providerKey}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`
-    const { error: upErr } = await supabase.storage.from(BUCKET).upload(filename, ab, {
+    const bucket = supabase.storage.from(BUCKET)
+
+    const { error: upErr } = await bucket.upload(filename, ab, {
       contentType,
       upsert: false,
     })
     if (upErr) return null
-    const { data } = await supabase.storage.from(BUCKET).getPublicUrl(filename)
-    return data?.publicUrl || null
+
+    // Try to return a public URL if bucket is public
+    const { data: pub } = await bucket.getPublicUrl(filename)
+    if (pub?.publicUrl) return pub.publicUrl
+
+    // Fallback to a long-lived signed URL if bucket is not public
+    const { data: signed, error: signErr } = await bucket.createSignedUrl(filename, 60 * 60 * 24 * 365 * 5) // 5 years
+    if (!signErr && signed?.signedUrl) return signed.signedUrl
+
+    return null
   } catch {
     return null
   }

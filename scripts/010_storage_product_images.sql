@@ -7,7 +7,7 @@ where not exists (select 1 from storage.buckets where id = 'product-images');
 alter table storage.objects enable row level security;
 
 -- Create policies only if they don't already exist
-do $
+do $$
 begin
   -- Public read
   if not exists (
@@ -58,4 +58,4 @@ begin
       using (bucket_id = 'product-images');
   end if;
 end
-$;
+$$;
