@@ -70,7 +70,6 @@ export default function AdminDashboard() {
     },
   })
   const [loading, setLoading] = useState(true)
-  const supabase = createClient()
   const router = useRouter()
 
   useEffect(() => {
@@ -80,73 +79,13 @@ export default function AdminDashboard() {
   const fetchDashboardStats = async () => {
     try {
       setLoading(true)
-
-      const { count: productsCount } = await supabase.from("products").select("*", { count: "exact", head: true })
-
-      const { data: orders, count: ordersCount } = await supabase
-        .from("orders")
-        .select("total_amount, status, created_at", { count: "exact" })
-
-      const { count: usersCount } = await supabase.from("profiles").select("*", { count: "exact", head: true })
-
-      const totalRevenue = orders?.reduce((sum, order) => sum + (order.total_amount || 0), 0) || 0
-
-      // Simple monthly buckets computed from actual orders
-      const months = ["Jan", "Fév", "Mar", "Avr", "Mai", "Jun", "Jul", "Aoû", "Sep", "Oct", "Nov", "Déc"]
-      const revenueBuckets = new Array(12).fill(0)
-      orders?.forEach((o) => {
-        const d = new Date(o.created_at)
-        revenueBuckets[d.getMonth()] += o.total_amount || 0
-      })
-      const currentMonth = new Date().getMonth()
-      const last6 = [...Array(6)].map((_, i) => (currentMonth - (5 - i) + 12) % 12)
-      const monthlyRevenue = last6.map((m) => ({ month: months[m], revenue: revenueBuckets[m] }))
-
-      const ordersByStatus = [
-        { name: "En attente", value: orders?.filter((o) => o.status === "pending").length || 0, color: "#F59E0B" },
-        { name: "Confirmé", value: orders?.filter((o) => o.status === "confirmed").length || 0, color: "#3B82F6" },
-        { name: "Expédié", value: orders?.filter((o) => o.status === "shipped").length || 0, color: "#8B5CF6" },
-        { name: "Livré", value: orders?.filter((o) => o.status === "delivered").length || 0, color: "#10B981" },
-        { name: "Annulé", value: orders?.filter((o) => o.status === "cancelled").length || 0, color: "#EF4444" },
-      ]
-
-      const { data: recentOrders } = await supabase
-        .from("orders")
-        .select(
-          `
-          *,
-          profiles!orders_user_id_fkey (full_name, email)
-        `,
-        )
-        .order("created_at", { ascending: false })
-        .limit(5)
-
-      const { data: lowStockProducts } = await supabase
-        .from("products")
-        .select("*")
-        .lte("stock_quantity", 10)
-        .eq("is_active", true)
-        .order("stock_quantity", { ascending: true })
-        .limit(5)
-
-      const growthMetrics = {
-        revenueGrowth: 0, // peut être calculé en comparant des périodes
-        ordersGrowth: 0,
-        usersGrowth: 0,
+      const res = await fetch("/api/admin/dashboard", { cache: "no-store" })
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}))
+        throw new Error(j?.error || "Chargement impossible")
       }
-
-      setStats({
-        totalProducts: productsCount || 0,
-        totalOrders: ordersCount || 0,
-        totalUsers: usersCount || 0,
-        totalRevenue,
-        recentOrders: recentOrders || [],
-        lowStockProducts: lowStockProducts || [],
-        monthlyRevenue,
-        ordersByStatus,
-        topCategories: [],
-        growthMetrics,
-      })
+      const json = await res.json()
+      setStats(json.data)
     } catch (error) {
       console.error("Error fetching dashboard stats:", error)
     } finally {
