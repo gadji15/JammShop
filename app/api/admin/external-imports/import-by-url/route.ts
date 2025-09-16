@@ -143,7 +143,6 @@ export async function POST(req: Request) {
       category_id: categoryId,
       supplier_id: supplierId ?? undefined,
       external_id: product.external_id,
-      external_url: url,
       stock_quantity: product.stock_quantity || 0,
       is_external: true,
       status: "active",

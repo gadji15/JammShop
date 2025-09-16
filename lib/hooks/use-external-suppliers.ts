@@ -239,84 +239,15 @@ export function useExternalSuppliers() {
     setImporting(true)
     const result: ImportResult = { success: 0, failed: 0, errors: [] }
     try {
-      const provider = detectProviderFromUrl(url)
-      const product = await fetchProductByUrl(url)
-
-      // ensure supplier exists
-      const supplierLabel =
-        provider === "aliexpress"
-          ? "AliExpress"
-          : provider === "alibaba"
-          ? "Alibaba"
-          : provider === "jumia"
-          ? "Jumia"
-          : "External Supplier"
-      const website =
-        provider === "aliexpress"
-          ? "https://aliexpress.com"
-          : provider === "alibaba"
-          ? "https://alibaba.com"
-          : provider === "jumia"
-          ? "https://jumia.com"
-          : undefined
-
-      const { data: supplierData } = await supabase
-        .from("suppliers")
-        .select("id")
-        .eq("name", supplierLabel)
-        .maybeSingle()
-      let supplierId = supplierData?.id
-      if (!supplierId) {
-        const { data: newSupplier } = await supabase
-          .from("suppliers")
-          .insert({
-            name: supplierLabel,
-            website,
-            status: "active",
-            description: `Auto-created supplier for URL imports (${supplierLabel})`,
-          })
-          .select("id")
-          .maybeSingle()
-        supplierId = newSupplier?.id
-      }
-
-      // category
-      let categoryId: string | null = null
-      const { data: categoryData } = await supabase
-        .from("categories")
-        .select("id")
-        .eq("name", product.category)
-        .maybeSingle()
-      if (categoryData) {
-        categoryId = categoryData.id
-      } else {
-        const { data: newCategory } = await supabase
-          .from("categories")
-          .insert({
-            name: product.category,
-            slug: product.category.toLowerCase().replace(/\s+/g, "-"),
-          })
-          .select("id")
-          .maybeSingle()
-        categoryId = newCategory?.id ?? null
-      }
-
-      const finalPrice = rules ? computePrice(product.price, rules) : product.price
-
-      const { error } = await supabase.from("products").insert({
-        name: product.name,
-        description: product.description,
-        price: finalPrice,
-        image_url: product.image_url,
-        category_id: categoryId,
-        supplier_id: supplierId ?? undefined,
-        external_id: product.external_id,
-        stock_quantity: product.stock_quantity || 0,
-        is_external: true,
-        status: "active",
+      const res = await fetch("/api/admin/external-imports/import-by-url", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url, pricingRules: rules }),
       })
-      if (error) throw error
-
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}))
+        throw new Error(j?.error || "Import API failed")
+      }
       result.success = 1
       toast.success("Produit importé depuis l'URL")
     } catch (e) {
