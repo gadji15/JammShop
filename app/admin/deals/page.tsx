@@ -106,18 +106,15 @@ export default function AdminDealsPage() {
     if (selectedIds.length === 0) return
     setLoading(true)
     try {
-      // For each selected: if compare_price is null or <= price, set compare_price=price; then set price=price*(1-pct)
-      const updates = selectedIds.map(async (id) => {
-        const row = rows.find((r) => r.id === id)
-        if (!row) return
-        const currentPrice = Number(row.price)
-        const currentCompare = row.compare_price != null ? Number(row.compare_price) : null
-        const newCompare = currentCompare != null && currentCompare > currentPrice ? currentCompare : currentPrice
-        const newPrice = Math.max(0.01, Number((newCompare * (1 - pct / 100)).toFixed(2)))
-        const { error } = await supabase.from("products").update({ compare_price: newCompare, price: newPrice }).eq("id", id)
-        if (error) throw error
+      const res = await fetch("/api/admin/products/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: selectedIds, action: "applyDiscountPercent", percent: pct }),
       })
-      await Promise.all(updates)
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}))
+        throw new Error(j?.error || "Action impossible")
+      }
       await fetchRows()
       setSelected({})
     } catch (e) {
@@ -131,15 +128,15 @@ export default function AdminDealsPage() {
     if (selectedIds.length === 0) return
     setLoading(true)
     try {
-      const updates = selectedIds.map(async (id) => {
-        const row = rows.find((r) => r.id === id)
-        if (!row) return
-        // Restore price to compare_price if present, then clear compare_price
-        const newPrice = row.compare_price && row.compare_price > 0 ? Number(row.compare_price.toFixed(2)) : row.price
-        const { error } = await supabase.from("products").update({ price: newPrice, compare_price: null }).eq("id", id)
-        if (error) throw error
+      const res = await fetch("/api/admin/products/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: selectedIds, action: "resetPromotions" }),
       })
-      await Promise.all(updates)
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}))
+        throw new Error(j?.error || "Action impossible")
+      }
       await fetchRows()
       setSelected({})
     } catch (e) {
