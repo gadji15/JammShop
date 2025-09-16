@@ -6,6 +6,8 @@ import type { SupplierKey } from "@/lib/providers/types"
 export const dynamic = "force-dynamic"
 export const revalidate = 0
 
+const BUCKET = "product-images"
+
 type PricingRules = {
   strategy: "percent" | "fixed" | "hybrid"
   percent?: number
@@ -50,6 +52,41 @@ async function requireAdmin() {
   if (!user) return { supabase, user: null, profile: null }
   const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).maybeSingle()
   return { supabase, user, profile }
+}
+
+async function uploadExternalImage(
+  supabase: ReturnType<typeof createClient> extends Promise<infer T> ? T : any,
+  imageUrl: string,
+  providerKey: string,
+): Promise<string | null> {
+  try {
+    if (!imageUrl || !/^https?:\/\//i.test(imageUrl)) return null
+    const res = await fetch(imageUrl)
+    if (!res.ok) return null
+    const contentType = res.headers.get("content-type") || "image/jpeg"
+    const ab = await res.arrayBuffer()
+    const ext = contentType.includes("png") ? "png" : contentType.includes("webp") ? "webp" : "jpg"
+    const filename = `${providerKey}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`
+    const bucket = supabase.storage.from(BUCKET)
+
+    const { error: upErr } = await bucket.upload(filename, ab, {
+      contentType,
+      upsert: false,
+    })
+    if (upErr) return null
+
+    // Try to return a public URL if bucket is public
+    const { data: pub } = await bucket.getPublicUrl(filename)
+    if (pub?.publicUrl) return pub.publicUrl
+
+    // Fallback to a long-lived signed URL if bucket is not public
+    const { data: signed, error: signErr } = await bucket.createSignedUrl(filename, 60 * 60 * 24 * 365 * 5) // 5 years
+    if (!signErr && signed?.signedUrl) return signed.signedUrl
+
+    return null
+  } catch {
+    return null
+  }
 }
 
 export async function POST(req: Request) {
@@ -111,12 +148,16 @@ export async function POST(req: Request) {
       categoryId = newCategory?.id ?? null
     }
 
+    // Upload image to storage (best effort)
+    const uploadedUrl = await uploadExternalImage(supabase, product.image_url, String(key))
+    const finalImage = uploadedUrl || product.image_url
+
     // Insert product
     const { error } = await supabase.from("products").insert({
       name: product.name,
       description: product.description,
       price: finalPrice,
-      image_url: product.image_url,
+      image_url: finalImage,
       category_id: categoryId,
       supplier_id: supplierId ?? undefined,
       external_id: product.external_id,
@@ -126,7 +167,7 @@ export async function POST(req: Request) {
     })
     if (error) throw error
 
-    return NextResponse.json({ ok: true, product: { ...product, price: finalPrice, provider: key as SupplierKey } })
+    return NextResponse.json({ ok: true, product: { ...product, price: finalPrice, image_url: finalImage, provider: key as SupplierKey } })
   } catch (e: any) {
     return NextResponse.json({ error: e?.message || "Import failed" }, { status: 500 })
   }
