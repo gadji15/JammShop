@@ -1,229 +1,260 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
-import { createClient } from "@/lib/supabase/client"
-import { Users, Search, Shield, ShieldCheck } from "lucide-react"
-import { toast } from "sonner"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Button } from "@/components/ui/button"
 
-interface User {
+type OrderDir = "asc" | "desc"
+
+type Profile = {
   id: string
   email: string
-  full_name: string
-  phone: string
-  role: string
+  full_name: string | null
+  role: "user" | "admin" | "super_admin"
   created_at: string
-  last_sign_in_at: string
-  order_count?: number
 }
 
 export default function AdminUsersPage() {
-  const [users, setUsers] = useState<User[]>([])
+  const [rows, setRows] = useState<Profile[]>([])
   const [loading, setLoading] = useState(true)
-  const [searchTerm, setSearchTerm] = useState("")
+  const [error, setError] = useState<string | null>(null)
 
-  const supabase = createClient()
+  // server-driven controls
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(20)
+  const [q, setQ] = useState("")
+  const [role, setRole] = useState("all")
+  const [sort, setSort] = useState("created_at")
+  const [order, setOrder] = useState<OrderDir>("desc")
+  const [total, setTotal] = useState(0)
 
-  useEffect(() => {
-    secureAndFetch()
-  }, [])
+  const totalPages = useMemo(() => Math.max(1, Math.ceil(total / pageSize)), [total, pageSize])
 
-  const secureAndFetch = async () => {
-    // Client-side hard guard (middleware handles server-side)
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      window.location.href = "/auth/login?redirect=/admin/users"
-      return
-    }
-    const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
-    if (profile?.role !== "super_admin") {
-      window.location.href = "/admin"
-      return
-    }
-    await fetchUsers()
-  }
-
-  const fetchUsers = async () => {
+  const fetchRows = useCallback(async () => {
     try {
-      // Fetch profiles without implicit join
-      const { data: profiles, error: profilesError } = await supabase
-        .from("profiles")
-        .select("id,email,full_name,role,created_at,last_sign_in_at")
-        .order("created_at", { ascending: false })
+      setLoading(true)
+      setError(null)
+      const p = new URLSearchParams()
+      p.set("page", String(page))
+      p.set("pageSize", String(pageSize))
+      if (q) p.set("q", q)
+      if (role && role !== "all") p.set("role", role)
+      if (sort) p.set("sort", sort)
+      if (order) p.set("order", order)
 
-      if (profilesError) throw profilesError
-
-      // Fetch aggregated order counts by user_id
-      const { data: orderAgg, error: ordersError } = await supabase
-        .from("orders")
-        .select("user_id, count:id") // PostgREST: alias count on id
-        .group("user_id")
-
-      if (ordersError) throw ordersError
-
-      const countsMap = new Map<string, number>()
-      ;(orderAgg || []).forEach((row: any) => {
-        if (row.user_id) countsMap.set(row.user_id, Number(row.count) || 0)
-      })
-
-      const usersWithOrderCount = (profiles || []).map((u: any) => ({
-        ...u,
-        order_count: countsMap.get(u.id) ?? 0,
-      }))
-
-      setUsers(usersWithOrderCount)
-    } catch (error) {
-      console.error("Error fetching users:", error)
-      toast.error("Erreur lors du chargement des utilisateurs")
+      const res = await fetch(`/api/admin/users?${p.toString()}`, { cache: "no-store" })
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}))
+        throw new Error(j?.error || "Chargement impossible")
+      }
+      const json = await res.json()
+      setRows(json.data || [])
+      setTotal(json.total || 0)
+    } catch (e: any) {
+      setError(e?.message || "Erreur")
+      setRows([])
+      setTotal(0)
     } finally {
       setLoading(false)
     }
-  }
+  }, [page, pageSize, q, role, sort, order])
 
-  const toggleUserRole = async (userId: string, currentRole: string) => {
-    // Respect des rôles du projet: 'customer', 'admin', 'super_admin'
-    // Cette action ne doit pas gérer super_admin (réservé via un autre flux)
-    const newRole = currentRole === "admin" ? "customer" : "admin"
+  useEffect(() => {
+    fetchRows()
+  }, [fetchRows])
 
-    try {
-      const { error } = await supabase.from("profiles").update({ role: newRole }).eq("id", userId)
-
-      if (error) throw error
-
-      toast.success(`Rôle mis à jour vers ${newRole}`)
-      fetchUsers()
-    } catch (error) {
-      console.error("Error updating user role:", error)
-      toast.error("Erreur lors de la mise à jour du rôle")
+  const toggleSort = (key: string) => {
+    if (sort === key) {
+      setOrder(order === "asc" ? "desc" : "asc")
+    } else {
+      setSort(key)
+      setOrder("asc")
     }
   }
 
-  const filteredUsers = users.filter(
-    (user) =>
-      user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase()),
-  )
-
-  if (loading) {
-    return (
-      <div className="space-y-6">
-        <div className="flex justify_between items-center">
-          <h1 className="text-3xl font-bold">Gestion des Utilisateurs</h1>
-        </div>
-        <div className="animate-pulse space-y-4">
-          {[...Array(5)].map((_, i) => (
-            <div key={i} className="h-16 bg-gray-200 rounded"></div>
-          ))}
-        </div>
-      </div>
-    )
+  const changeRole = async (id: string, newRole: Profile["role"]) => {
+    try {
+      const res = await fetch(`/api/admin/users/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role: newRole }),
+      })
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}))
+        throw new Error(j?.error || "Mise à jour impossible")
+      }
+      fetchRows()
+    } catch (e) {
+      alert("Erreur lors du changement de rôle")
+    }
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex justify_between items-center">
-        <h1 className="text-3xl font-bold">Gestion des Utilisateurs</h1>
-        <div className="flex items-center space-x-2">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-            <Input
-              placeholder="Rechercher un utilisateur..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 w-64"
-            />
-          </div>
-        </div>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Utilisateurs</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{users.length}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Administrateurs</CardTitle>
-            <ShieldCheck className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{users.filter((user) => user.role === "admin").length}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Utilisateurs Actifs</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{users.filter((user) => user.last_sign_in_at).length}</div>
-          </CardContent>
-        </Card>
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900">Utilisateurs</h1>
+        <p className="text-gray-600">Gérez les comptes et rôles</p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center">
-            <Users className="h-5 w-5 mr-2" />
-            Liste des Utilisateurs
-          </CardTitle>
+          <CardTitle>Liste des utilisateurs {total ? `(${total})` : ""}</CardTitle>
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="relative flex-1 min-w-[200px] md:max-w-sm">
+              <Input
+                placeholder="Rechercher (nom, email)"
+                value={q}
+                onChange={(e) => {
+                  setQ(e.target.value)
+                  setPage(1)
+                }}
+              />
+            </div>
+            <Select
+              value={role}
+              onValueChange={(v) => {
+                setRole(v)
+                setPage(1)
+              }}
+            >
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Filtrer par rôle" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tous</SelectItem>
+                <SelectItem value="user">User</SelectItem>
+                <SelectItem value="admin">Admin</SelectItem>
+                <SelectItem value="super_admin">Super admin</SelectItem>
+              </SelectContent>
+            </Select>
+            <div className="ml-auto flex items-center gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setQ("")
+                  setRole("all")
+                  setSort("created_at")
+                  setOrder("desc")
+                  setPage(1)
+                }}
+              >
+                Réinitialiser
+              </Button>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nom</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Téléphone</TableHead>
-                <TableHead>Rôle</TableHead>
-                <TableHead>Commandes</TableHead>
-                <TableHead>Inscription</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredUsers.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell className="font-medium">{user.full_name || "Non renseigné"}</TableCell>
-                  <TableCell>{user.email}</TableCell>
-                  <TableCell>{user.phone || "Non renseigné"}</TableCell>
-                  <TableCell>
-                    <Badge variant={user.role === "admin" ? "default" : "secondary"}>
-                      {user.role === "admin" ? (
-                        <>
-                          <ShieldCheck className="h-3 w-3 mr-1" />
-                          Admin
-                        </>
-                      ) : (
-                        <>
-                          <Shield className="h-3 w-3 mr-1" />
-                          Utilisateur
-                        </>
-                      )}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline">{user.order_count} commandes</Badge>
-                  </TableCell>
-                  <TableCell>{new Date(user.created_at).toLocaleDateString("fr-FR")}</TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="outline" size="sm" onClick={() => toggleUserRole(user.id, user.role)}>
-                      {user.role === "admin" ? "Rétrograder" : "Promouvoir"}
-                    </Button>
-                  </TableCell>
+          {error && <div className="mb-3 text-sm text-red-600">Erreur: {error}</div>}
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead
+                    className="cursor-pointer"
+                    onClick={() => toggleSort("full_name")}
+                    title="Trier par nom"
+                  >
+                    Nom {sort === "full_name" ? (order === "asc" ? "▲" : "▼") : ""}
+                  </TableHead>
+                  <TableHead
+                    className="cursor-pointer"
+                    onClick={() => toggleSort("email")}
+                    title="Trier par email"
+                  >
+                    Email {sort === "email" ? (order === "asc" ? "▲" : "▼") : ""}
+                  </TableHead>
+                  <TableHead>Rôle</TableHead>
+                  <TableHead
+                    className="cursor-pointer"
+                    onClick={() => toggleSort("created_at")}
+                    title="Trier par date"
+                  >
+                    Inscription {sort === "created_at" ? (order === "asc" ? "▲" : "▼") : ""}
+                  </TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {loading ? (
+                  [...Array(6)].map((_, i) => (
+                    <TableRow key={i} className="animate-pulse">
+                      <TableCell colSpan={5}>
+                        <div className="h-10 bg-gray-100 rounded" />
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : rows.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={5}>
+                      <div className="text-center py-8 text-gray-500">Aucun utilisateur trouvé</div>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  rows.map((u) => (
+                    <TableRow key={u.id}>
+                      <TableCell className="font-medium">{u.full_name || "—"}</TableCell>
+                      <TableCell>{u.email}</TableCell>
+                      <TableCell>
+                        <Select value={u.role} onValueChange={(v) => changeRole(u.id, v as any)}>
+                          <SelectTrigger className="w-40">{u.role}</SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="user">user</SelectItem>
+                            <SelectItem value="admin">admin</SelectItem>
+                            <SelectItem value="super_admin">super_admin</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                      <TableCell>{new Date(u.created_at).toLocaleDateString("fr-FR")}</TableCell>
+                      <TableCell>
+                        {/* Placeholders for future actions */}
+                        <div className="text-xs text-gray-500">—</div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+
+          {/* Pagination */}
+          <div className="flex items-center justify-between mt-4">
+            <div className="text-sm text-gray-600">
+              Page {page} / {totalPages} — {total} élément(s)
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                disabled={page <= 1}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+              >
+                Précédent
+              </Button>
+              <Button
+                variant="outline"
+                disabled={page >= totalPages}
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              >
+                Suivant
+              </Button>
+              <select
+                value={pageSize}
+                onChange={(e) => {
+                  setPageSize(Number(e.target.value))
+                  setPage(1)
+                }}
+                className="border rounded px-2 py-1 text-sm"
+              >
+                {[10, 20, 30, 50, 100].map((s) => (
+                  <option key={s} value={s}>
+                    {s} / page
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>
