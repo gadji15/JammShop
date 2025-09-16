@@ -1,64 +1,96 @@
 "use client"
 
+import Link from "next/link"
+import { usePathname, useRouter } from "next/navigation"
+import { useCallback, useEffect, useState } from "react"
+import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
-import { cn } from "@/lib/utils"
+import { Sheet, SheetContent } from "@/components/ui/sheet"
+import { createClient } from "@/lib/supabase/client"
 import {
   BarChart3,
   Building2,
+  Download,
   FolderTree,
   Home,
   LogOut,
   Package,
+  Percent,
   Settings,
   ShoppingCart,
   Users,
-  Download,
-  Percent,
+  ChevronDown,
 } from "lucide-react"
-import Link from "next/link"
-import { usePathname, useRouter } from "next/navigation"
-import { createClient } from "@/lib/supabase/client"
-import { useState, useEffect } from "react"
 
-const navigation = [
-  { name: "Dashboard", href: "/admin", icon: Home },
-  { name: "Produits", href: "/admin/products", icon: Package },
-  { name: "Catégories", href: "/admin/categories", icon: FolderTree },
-  { name: "Commandes", href: "/admin/orders", icon: ShoppingCart },
-  { name: "Utilisateurs", href: "/admin/users", icon: Users },
-  { name: "Fournisseurs", href: "/admin/suppliers", icon: Building2 },
-  { name: "Promotions", href: "/admin/deals", icon: Percent },
-  { name: "Imports Externes", href: "/admin/external-imports", icon: Download },
-  { name: "Statistiques", href: "/admin/analytics", icon: BarChart3 },
-  { name: "Paramètres", href: "/admin/settings", icon: Settings },
+type NavItem = { name: string; href: string; icon: any }
+type NavGroup = { key: string; label: string; items: NavItem[] }
+
+const GROUPS: NavGroup[] = [
+  {
+    key: "dashboard",
+    label: "Tableau de bord",
+    items: [{ name: "Dashboard", href: "/admin", icon: Home }],
+  },
+  {
+    key: "catalog",
+    label: "Catalogue",
+    items: [
+      { name: "Produits", href: "/admin/products", icon: Package },
+      { name: "Catégories", href: "/admin/categories", icon: FolderTree },
+      { name: "Promotions", href: "/admin/deals", icon: Percent },
+      { name: "Fournisseurs", href: "/admin/suppliers", icon: Building2 },
+      { name: "Imports Externes", href: "/admin/external-imports", icon: Download },
+    ],
+  },
+  {
+    key: "ops",
+    label: "Opérations",
+    items: [
+      { name: "Commandes", href: "/admin/orders", icon: ShoppingCart },
+      { name: "Utilisateurs", href: "/admin/users", icon: Users },
+      { name: "Statistiques", href: "/admin/analytics", icon: BarChart3 },
+    ],
+  },
+  {
+    key: "settings",
+    label: "Paramètres",
+    items: [{ name: "Paramètres", href: "/admin/settings", icon: Settings }],
+  },
 ]
 
-type SidebarProps = {
-  disableAutoCollapse?: boolean
-  className?: string
-}
-
-export function AdminSidebar({ disableAutoCollapse = false, className }: SidebarProps) {
+function SidebarInner({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
-  const [isCollapsed, setIsCollapsed] = useState(false)
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({})
 
   useEffect(() => {
-    if (disableAutoCollapse) return
-    const handleResize = () => {
-      if (window.innerWidth < 1024) {
-        setIsCollapsed(true)
-      } else {
-        setIsCollapsed(false)
-      }
-    }
+    try {
+      const raw = localStorage.getItem("admin_sidebar_collapsed")
+      if (raw) setCollapsed(JSON.parse(raw))
+    } catch {}
+  }, [])
 
-    handleResize()
-    window.addEventListener("resize", handleResize)
-    return () => window.removeEventListener("resize", handleResize)
-  }, [disableAutoCollapse])
+  const persist = useCallback((next: Record<string, boolean>) => {
+    setCollapsed(next)
+    try {
+      localStorage.setItem("admin_sidebar_collapsed", JSON.stringify(next))
+    } catch {}
+  }, [])
+
+  const toggle = (key: string) => {
+    const next = { ...collapsed, [key]: !collapsed[key] }
+    persist(next)
+  }
+
+  const isActive = useCallback(
+    (href: string) => {
+      if (!pathname) return false
+      return pathname === href || pathname.startsWith(href + "/")
+    },
+    [pathname],
+  )
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
@@ -66,77 +98,102 @@ export function AdminSidebar({ disableAutoCollapse = false, className }: Sidebar
   }
 
   return (
-    <div
-      className={cn(
-        "flex h-full flex-col bg-gray-900 text-white transition-all duration-300 ease-in-out",
-        isCollapsed ? "w-16" : "w-64",
-        className,
-      )}
-    >
-      {/* Logo */}
-      <div className="flex h-16 items-center justify-center px-3">
-        <div className="flex items-center space-x-2">
-          <div className="h-8 w-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg">
-            <span className="text-white font-bold text-sm">J</span>
-          </div>
-          {!isCollapsed && (
-            <span className="font-bold text-xl bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-              JammShop
-            </span>
-          )}
+    <div className="flex h-full flex-col bg-gray-900 text-white w-72 lg:w-64 overflow-hidden">
+      {/* Header/Branding */}
+      <div className="flex h-16 items-center px-4 shrink-0">
+        <div className="h-8 w-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg">
+          <span className="text-white font-bold text-sm">J</span>
         </div>
+        <span className="ml-2 font-bold text-xl bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+          JammShop
+        </span>
       </div>
-
       <Separator className="bg-gray-700" />
 
       {/* Navigation */}
-      <nav className="flex-1 px-2 py-4 overflow-y-auto">
-        <ul className="space-y-1">
-          {navigation.map((item) => {
-            const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
+      <nav className="flex-1 overflow-y-auto overflow-x-hidden px-2 py-3">
+        <div className="space-y-2">
+          {GROUPS.map((g) => {
+            const isCollapsed = !!collapsed[g.key]
             return (
-              <li key={item.name}>
-                <Link
-                  href={item.href}
-                  className={cn(
-                    "flex items-center rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 group relative",
-                    isActive
-                      ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg"
-                      : "text-gray-300 hover:bg-gray-800 hover:text-white hover:scale-105",
-                  )}
-                  title={isCollapsed ? item.name : undefined}
+              <div key={g.key} className="space-y-1">
+                <button
+                  type="button"
+                  className="w-full flex items-center justify-between text-left text-xs uppercase tracking-wide text-gray-400 px-2 py-2 hover:text-white"
+                  onClick={() => toggle(g.key)}
+                  aria-expanded={!isCollapsed}
                 >
-                  <item.icon
-                    className={cn("flex-shrink-0 transition-all duration-200", isCollapsed ? "h-6 w-6" : "h-5 w-5")}
+                  <span>{g.label}</span>
+                  <ChevronDown
+                    className={cn("h-4 w-4 transition-transform", isCollapsed ? "-rotate-90" : "rotate-0")}
                   />
-                  {!isCollapsed && <span className="ml-3 truncate">{item.name}</span>}
-                  {isCollapsed && (
-                    <div className="absolute left-full ml-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
-                      {item.name}
-                    </div>
-                  )}
-                </Link>
-              </li>
+                </button>
+                {!isCollapsed && (
+                  <ul className="space-y-1">
+                    {g.items.map((item) => {
+                      const active = isActive(item.href)
+                      return (
+                        <li key={item.href}>
+                          <Link
+                            href={item.href}
+                            onClick={onNavigate}
+                            className={cn(
+                              "flex items-center rounded-lg px-3 py-2 text-sm transition-colors duration-200",
+                              active
+                                ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg"
+                                : "text-gray-300 hover:bg-gray-800 hover:text-white",
+                            )}
+                          >
+                            <item.icon className="h-5 w-5 flex-shrink-0" />
+                            <span className="ml-3 truncate">{item.name}</span>
+                          </Link>
+                        </li>
+                      )
+                    })}
+                  </ul>
+                )}
+              </div>
             )
           })}
-        </ul>
+        </div>
       </nav>
 
       <Separator className="bg-gray-700" />
 
-      {/* User Actions */}
-      <div className="p-2">
+      {/* Footer actions */}
+      <div className="p-2 shrink-0">
         <Button
           variant="ghost"
           onClick={handleSignOut}
-          className={cn(
-            "w-full text-gray-300 hover:bg-gray-800 hover:text-white transition-all duration-200 group relative",
-            isCollapsed ? "justify-center px-2" : "justify-start",
-          )}
-          title={isCollapsed ? "Se déconnecter" : undefined}
+          className="w-full text-gray-300 hover:bg-gray-800 hover:text-white"
         >
-          <LogOut className={cn("flex-shrink-0", isCollapsed ? "h-5 w-5" : "h-4 w-4")} />
-          {!isCollapsed && <span className="ml-3">Se déconnecter</span>}
+          <LogOut className="h-4 w-4" />
+          <span className="ml-3">Se déconnecter</span>
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+export function AdminSidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }) {
+  return (
+    <>
+      {/* Desktop static sidebar */}
+      <div className="hidden lg:block h-full">
+        <SidebarInner />
+      </div>
+
+      {/* Mobile drawer sidebar */}
+      <div className="lg:hidden">
+        <Sheet open={!!isOpen} onOpenChange={(open) => (!open ? onClose?.() : null)}>
+          <SheetContent side="left" className="p-0 w-72 sm:w-80 data-[state=open]:animate-in">
+            <SidebarInner onNavigate={onClose} />
+          </SheetContent>
+        </Sheet>
+      </div>
+    </>
+  )
+}
           {isCollapsed && (
             <div className="absolute left-full ml-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
               Se déconnecter
