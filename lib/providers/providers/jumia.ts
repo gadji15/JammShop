@@ -1,23 +1,18 @@
 import type { ExternalProduct, ProviderAdapter } from "../types"
+import { fetchAndExtract } from "../scrape"
 
 async function fetchByUrl(url: string): Promise<ExternalProduct> {
-  await new Promise((r) => setTimeout(r, 700))
-  return {
-    external_id: `jumia_${Date.now()}`,
-    name: "Jumia Product",
-    description: "Imported via adapter (placeholder).",
-    price: Math.floor(Math.random() * 15000) + 1500,
-    image_url: "/placeholder.svg?height=420&width=420&query=jumia",
-    category: "Auto",
-    supplier_name: "Jumia",
-    stock_quantity: Math.floor(Math.random() * 300) + 10,
-    currency: "XOF",
-    url,
+  const apiKey = process.env.JUMIA_API_KEY
+  if (apiKey) {
+    // TODO: Implement official/partner API client for Jumia using JUMIA_API_KEY if available.
+    // Normalize into ExternalProduct or fall back to scraping if API fails.
   }
+  return fetchAndExtract(url, "Jumia")
 }
 
 async function search(q: string, limit = 20): Promise<ExternalProduct[]> {
-  await new Promise((r) => setTimeout(r, 900))
+  // TODO: Implement real search via API or curated cache
+  await new Promise((r) => setTimeout(r, 500))
   return Array.from({ length: Math.min(limit, 10) }, (_, i) => ({
     external_id: `jumia_${Date.now()}_${i}`,
     name: `${q} Jumia #${i + 1}`,

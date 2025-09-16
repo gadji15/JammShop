@@ -1,26 +1,20 @@
 import type { ExternalProduct, ProviderAdapter } from "../types"
+import { fetchAndExtract } from "../scrape"
 
-// Placeholder implementation: API-first (TODO), fallback mock/scrape
+// API-first (TODO with official AliExpress API), fallback to scraping
 async function fetchByUrl(url: string): Promise<ExternalProduct> {
-  // TODO: If API keys exist, call official API here
-  // else fallback to scraping component/service
-  await new Promise((r) => setTimeout(r, 700))
-  return {
-    external_id: `aliexpress_${Date.now()}`,
-    name: "AliExpress Product",
-    description: "Imported via adapter (placeholder).",
-    price: Math.floor(Math.random() * 20000) + 2000,
-    image_url: "/placeholder.svg?height=420&width=420&query=aliexpress",
-    category: "Auto",
-    supplier_name: "AliExpress",
-    stock_quantity: Math.floor(Math.random() * 300) + 10,
-    currency: "USD",
-    url,
+  const apiKey = process.env.ALIEXPRESS_API_KEY
+  if (apiKey) {
+    // TODO: Implement official API client using ALIEXPRESS_API_KEY
+    // Return normalized ExternalProduct
+    // If API call fails, fall back to scraping
   }
+  return fetchAndExtract(url, "AliExpress")
 }
 
 async function search(q: string, limit = 20): Promise<ExternalProduct[]> {
-  await new Promise((r) => setTimeout(r, 900))
+  // TODO: Implement real search via API or a curated catalog/cache
+  await new Promise((r) => setTimeout(r, 500))
   return Array.from({ length: Math.min(limit, 10) }, (_, i) => ({
     external_id: `aliexpress_${Date.now()}_${i}`,
     name: `${q} AliExpress #${i + 1}`,
