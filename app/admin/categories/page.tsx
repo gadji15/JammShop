@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { createClient } from "@/lib/supabase/client"
+
 import { Plus, Edit, Trash2, Package } from "lucide-react"
 import { toast } from "sonner"
 
@@ -44,22 +44,14 @@ export default function AdminCategoriesPage() {
 
   const fetchCategories = async () => {
     try {
-      const { data, error } = await supabase
-        .from("categories")
-        .select(`
-          *,
-          products(count)
-        `)
-        .order("created_at", { ascending: false })
-
-      if (error) throw error
-
-      const categoriesWithCount = data.map((category) => ({
-        ...category,
-        product_count: category.products?.[0]?.count || 0,
-      }))
-
-      setCategories(categoriesWithCount)
+      setLoading(true)
+      const res = await fetch("/api/admin/categories", { cache: "no-store" })
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}))
+        throw new Error(j?.error || "Chargement impossible")
+      }
+      const json = await res.json()
+      setCategories(json.data || [])
     } catch (error) {
       console.error("Error fetching categories:", error)
       toast.error("Erreur lors du chargement des catégories")
@@ -72,30 +64,35 @@ export default function AdminCategoriesPage() {
     e.preventDefault()
 
     try {
-      const slug = formData.name.toLowerCase().replace(/\s+/g, "-")
-
       if (editingCategory) {
-        const { error } = await supabase
-          .from("categories")
-          .update({
+        const res = await fetch(`/api/admin/categories/${editingCategory.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
             name: formData.name,
-            slug,
             description: formData.description,
-            image_url: formData.image_url,
-          })
-          .eq("id", editingCategory.id)
-
-        if (error) throw error
+            image_url: formData.image_url || null,
+          }),
+        })
+        if (!res.ok) {
+          const j = await res.json().catch(() => ({}))
+          throw new Error(j?.error || "Mise à jour impossible")
+        }
         toast.success("Catégorie mise à jour avec succès")
       } else {
-        const { error } = await supabase.from("categories").insert({
-          name: formData.name,
-          slug,
-          description: formData.description,
-          image_url: formData.image_url,
+        const res = await fetch("/api/admin/categories", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: formData.name,
+            description: formData.description,
+            image_url: formData.image_url || null,
+          }),
         })
-
-        if (error) throw error
+        if (!res.ok) {
+          const j = await res.json().catch(() => ({}))
+          throw new Error(j?.error || "Création impossible")
+        }
         toast.success("Catégorie créée avec succès")
       }
 
@@ -123,9 +120,11 @@ export default function AdminCategoriesPage() {
     if (!confirm("Êtes-vous sûr de vouloir supprimer cette catégorie ?")) return
 
     try {
-      const { error } = await supabase.from("categories").delete().eq("id", id)
-
-      if (error) throw error
+      const res = await fetch(`/api/admin/categories/${id}`, { method: "DELETE" })
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}))
+        throw new Error(j?.error || "Suppression impossible")
+      }
       toast.success("Catégorie supprimée avec succès")
       fetchCategories()
     } catch (error) {
