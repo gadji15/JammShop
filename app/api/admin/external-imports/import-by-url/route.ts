@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
+import { detectProviderFromUrl } from "@/lib/providers"
+import type { SupplierKey } from "@/lib/providers/types"
 
 export const dynamic = "force-dynamic"
 export const revalidate = 0
@@ -40,35 +42,6 @@ function computePrice(cost: number, rules?: PricingRules): number {
   return Math.max(0, Math.floor(price))
 }
 
-function detectProviderFromUrl(url: string) {
-  try {
-    const u = new URL(url)
-    const host = u.hostname.toLowerCase()
-    if (host.includes("aliexpress")) return { key: "aliexpress", label: "AliExpress", website: "https://aliexpress.com" }
-    if (host.includes("alibaba")) return { key: "alibaba", label: "Alibaba", website: "https://alibaba.com" }
-    if (host.includes("jumia")) return { key: "jumia", label: "Jumia", website: "https://jumia.com" }
-    return { key: "other", label: "External Supplier", website: undefined }
-  } catch {
-    return { key: "other", label: "External Supplier", website: undefined }
-  }
-}
-
-// NOTE: This is a placeholder that should be replaced with a real provider API or scraper
-async function fetchProductByUrl(url: string) {
-  const provider = detectProviderFromUrl(url)
-  return {
-    external_id: `${provider.key}_${Date.now()}`,
-    name: `Produit importé (${provider.label})`,
-    description:
-      "Produit importé automatiquement depuis une URL fournisseur. La description détaillée sera synchronisée.",
-    price: Math.floor(Math.random() * 25000) + 3000,
-    image_url: `/placeholder.svg?height=420&width=420&query=${encodeURIComponent(provider.label + " product")}`,
-    category: "Auto",
-    supplier_name: provider.label,
-    stock_quantity: Math.floor(Math.random() * 200) + 5,
-  }
-}
-
 async function requireAdmin() {
   const supabase = await createClient()
   const {
@@ -92,24 +65,28 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing url" }, { status: 400 })
     }
 
-    const provider = detectProviderFromUrl(url)
-    const product = await fetchProductByUrl(url)
+    const resolved = detectProviderFromUrl(url)
+    if (!resolved) {
+      return NextResponse.json({ error: "Unsupported provider in URL" }, { status: 400 })
+    }
+    const { key, adapter } = resolved
+    const product = await adapter.fetchByUrl(url)
     const finalPrice = computePrice(product.price, pricingRules)
 
-    // Ensure supplier exists
+    // Ensure supplier exists based on adapter.label
     const { data: supplierData } = await supabase
       .from("suppliers")
       .select("id")
-      .eq("name", provider.label)
+      .eq("name", adapter.label)
       .maybeSingle()
     let supplierId = supplierData?.id
     if (!supplierId) {
       const { data: newSupplier } = await supabase
         .from("suppliers")
         .insert({
-          name: provider.label,
-          website: provider.website,
-          description: `Auto-created supplier for URL imports (${provider.label})`,
+          name: adapter.label,
+          website: adapter.website,
+          description: `Auto-created supplier for URL imports (${adapter.label})`,
           status: "active",
         })
         .select("id")
@@ -149,7 +126,7 @@ export async function POST(req: Request) {
     })
     if (error) throw error
 
-    return NextResponse.json({ ok: true, product: { ...product, price: finalPrice } })
+    return NextResponse.json({ ok: true, product: { ...product, price: finalPrice, provider: key as SupplierKey } })
   } catch (e: any) {
     return NextResponse.json({ error: e?.message || "Import failed" }, { status: 500 })
   }
