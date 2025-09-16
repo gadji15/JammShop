@@ -7,10 +7,11 @@ import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import type { ProductWithDetails } from "@/lib/types/database"
-import { Edit, Eye, Plus, Search, Trash2 } from "lucide-react"
+import { Edit, Eye, Plus, Search, Trash2, Download } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import { useCallback, useEffect, useMemo, useState } from "react"
+import { toast } from "sonner"
 
 type Order = "asc" | "desc"
 
@@ -496,6 +497,59 @@ export default function AdminProductsPage() {
                   </option>
                 ))}
               </select>
+              <Button
+                variant="outline"
+                onClick={async () => {
+                  try {
+                    const rows = products
+                    if (!rows || rows.length === 0) {
+                      toast.info("Aucune donnée à exporter (page vide)")
+                      return
+                    }
+                    const header = [
+                      "id",
+                      "name",
+                      "sku",
+                      "category",
+                      "price",
+                      "compare_price",
+                      "stock_quantity",
+                      "is_active",
+                      "is_featured",
+                      "created_at",
+                    ]
+                    const csvRows = [
+                      header.join(","),
+                      ...rows.map((r: any) =>
+                        [
+                          r.id,
+                          JSON.stringify(r.name || ""),
+                          JSON.stringify(r.sku || ""),
+                          JSON.stringify(r.categories?.name || ""),
+                          r.price ?? "",
+                          r.compare_price ?? "",
+                          r.stock_quantity ?? "",
+                          r.is_active ? "1" : "0",
+                          r.is_featured ? "1" : "0",
+                          r.created_at || "",
+                        ].join(","),
+                      ),
+                    ]
+                    const blob = new Blob([csvRows.join("\n")], { type: "text/csv;charset=utf-8" })
+                    const url = URL.createObjectURL(blob)
+                    const a = document.createElement("a")
+                    a.href = url
+                    a.download = `products_page_${page}.csv`
+                    a.click()
+                    URL.revokeObjectURL(url)
+                  } catch {
+                    toast.error("Export CSV impossible")
+                  }
+                }}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export CSV (page)
+              </Button>
             </div>
           </div>
         </CardContent>
