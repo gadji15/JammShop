@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
+
 import type { ProductWithDetails } from "@/lib/types/database"
 import { Edit, Eye, Plus, Search, Trash2, Download, Filter, MoreHorizontal, ChevronLeft, ChevronRight } from "lucide-react"
 import Image from "next/image"
