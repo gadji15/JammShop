@@ -6,7 +6,7 @@ import { useCallback, useEffect, useState } from "react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
-import { Sheet, SheetContent } from "@/components/ui/sheet"
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet"
 import { createClient } from "@/lib/supabase/client"
 import {
   BarChart3,
@@ -187,20 +187,14 @@ export function AdminSidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: 
       <div className="lg:hidden">
         <Sheet open={!!isOpen} onOpenChange={(open) => (!open ? onClose?.() : null)}>
           <SheetContent side="left" className="p-0 w-72 sm:w-80 data-[state=open]:animate-in">
+            <SheetHeader className="sr-only">
+              <SheetTitle>Navigation d'administration</SheetTitle>
+              <SheetDescription>Menu de navigation pour les sections d'administration</SheetDescription>
+            </SheetHeader>
             <SidebarInner onNavigate={onClose} />
           </SheetContent>
         </Sheet>
       </div>
     </>
-  )
-}
-          {isCollapsed && (
-            <div className="absolute left-full ml-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
-              Se déconnecter
-            </div>
-          )}
-        </Button>
-      </div>
-    </div>
   )
 }
