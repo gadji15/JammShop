@@ -64,30 +64,35 @@ export default function AdminCategoriesPage() {
     e.preventDefault()
 
     try {
-      const slug = formData.name.toLowerCase().replace(/\s+/g, "-")
-
       if (editingCategory) {
-        const { error } = await supabase
-          .from("categories")
-          .update({
+        const res = await fetch(`/api/admin/categories/${editingCategory.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
             name: formData.name,
-            slug,
             description: formData.description,
-            image_url: formData.image_url,
-          })
-          .eq("id", editingCategory.id)
-
-        if (error) throw error
+            image_url: formData.image_url || null,
+          }),
+        })
+        if (!res.ok) {
+          const j = await res.json().catch(() => ({}))
+          throw new Error(j?.error || "Mise à jour impossible")
+        }
         toast.success("Catégorie mise à jour avec succès")
       } else {
-        const { error } = await supabase.from("categories").insert({
-          name: formData.name,
-          slug,
-          description: formData.description,
-          image_url: formData.image_url,
+        const res = await fetch("/api/admin/categories", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: formData.name,
+            description: formData.description,
+            image_url: formData.image_url || null,
+          }),
         })
-
-        if (error) throw error
+        if (!res.ok) {
+          const j = await res.json().catch(() => ({}))
+          throw new Error(j?.error || "Création impossible")
+        }
         toast.success("Catégorie créée avec succès")
       }
 
@@ -115,9 +120,11 @@ export default function AdminCategoriesPage() {
     if (!confirm("Êtes-vous sûr de vouloir supprimer cette catégorie ?")) return
 
     try {
-      const { error } = await supabase.from("categories").delete().eq("id", id)
-
-      if (error) throw error
+      const res = await fetch(`/api/admin/categories/${id}`, { method: "DELETE" })
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}))
+        throw new Error(j?.error || "Suppression impossible")
+      }
       toast.success("Catégorie supprimée avec succès")
       fetchCategories()
     } catch (error) {
