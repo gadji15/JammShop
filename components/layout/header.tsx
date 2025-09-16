@@ -227,7 +227,8 @@ export function Header() {
               {/* Discover Dropdown to avoid clutter */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="text-gray-700 hover:text-blue-600 font-medium">
+                  <Button variant="ghost" className="text-gray-700 hover:text-blue-600 font-medium inline-flex items-center gap-1.5">
+                    <Compass className="h-4 w-4 text-gray-400" />
                     Découvrir
                   </Button>
                 </DropdownMenuTrigger>
@@ -434,9 +435,10 @@ export function Header() {
                       <div className="space-y-2">
                         <Link
                           href="/products"
-                          className="block rounded-md px-3 py-2 text-base font-medium text-gray-900 hover:bg-gray-100"
+                          className="block rounded-md px-3 py-2 text-base font-medium text-gray-900 hover:bg-gray-100 inline-flex items-center gap-2"
                           onClick={() => setIsMenuOpen(false)}
                         >
+                          <Package className="h-4 w-4 text-gray-400" />
                           Produits
                         </Link>
                       </div>
@@ -496,23 +498,26 @@ export function Header() {
                           <div className="space-y-1">
                             <Link
                               href="/new-arrivals"
-                              className="block rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                              className="block rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 inline-flex items-center gap-2"
                               onClick={() => setIsMenuOpen(false)}
                             >
+                              <Wand2 className="h-4 w-4 text-gray-400" />
                               Nouveautés
                             </Link>
                             <Link
                               href="/deals"
-                              className="block rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                              className="block rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 inline-flex items-center gap-2"
                               onClick={() => setIsMenuOpen(false)}
                             >
+                              <Percent className="h-4 w-4 text-gray-400" />
                               Offres
                             </Link>
                             <Link
                               href="/brands"
-                              className="block rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                              className="block rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 inline-flex items-center gap-2"
                               onClick={() => setIsMenuOpen(false)}
                             >
+                              <Building2 className="h-4 w-4 text-gray-400" />
                               Marques
                             </Link>
                           </div>
@@ -523,16 +528,18 @@ export function Header() {
                       <div className="space-y-1 pt-2">
                         <Link
                           href="/contact"
-                          className="block rounded-md px-3 py-2 text-base font-medium text-gray-900 hover:bg-gray-100"
+                          className="block rounded-md px-3 py-2 text-base font-medium text-gray-900 hover:bg-gray-100 inline-flex items-center gap-2"
                           onClick={() => setIsMenuOpen(false)}
                         >
+                          <MessageCircle className="h-4 w-4 text-gray-400" />
                           Contact
                         </Link>
                         <Link
                           href="/about"
-                          className="block rounded-md px-3 py-2 text-base font-medium text-gray-900 hover:bg-gray-100"
+                          className="block rounded-md px-3 py-2 text-base font-medium text-gray-900 hover:bg-gray-100 inline-flex items-center gap-2"
                           onClick={() => setIsMenuOpen(false)}
                         >
+                          <Info className="h-4 w-4 text-gray-400" />
                           À propos
                         </Link>
                       </div>
