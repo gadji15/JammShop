@@ -12,7 +12,24 @@ import {
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet"
 import { useCategories } from "@/lib/hooks/use-categories"
 import { createClient } from "@/lib/supabase/client"
-import { Heart, Menu, Search, ShoppingCart, User, Settings, ChevronDown } from "lucide-react"
+import {
+  Heart,
+  Menu,
+  Search,
+  ShoppingCart,
+  User,
+  Settings,
+  ChevronDown,
+  Package,
+  FolderTree,
+  Compass,
+  MessageCircle,
+  Wand2,
+  Percent,
+  Building2,
+  Info,
+  ChevronRight,
+} from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
@@ -177,14 +194,16 @@ export function Header() {
 
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center space-x-6 flex-1">
-              <Link href="/products" className="text-gray-700 hover:text-blue-600 font-medium transition-colors">
+              <Link href="/products" className="text-gray-700 hover:text-blue-600 font-medium transition-colors inline-flex items-center gap-1.5">
+                <Package className="h-4 w-4 text-gray-400" />
                 Produits
               </Link>
 
               {/* Categories Dropdown */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="text-gray-700 hover:text-blue-600 font-medium">
+                  <Button variant="ghost" className="text-gray-700 hover:text-blue-600 font-medium inline-flex items-center gap-1.5">
+                    <FolderTree className="h-4 w-4 text-gray-400" />
                     Catégories
                   </Button>
                 </DropdownMenuTrigger>
