@@ -323,6 +323,54 @@ export default function AdminOrdersPage() {
                   </option>
                 ))}
               </select>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  try {
+                    if (!orders || orders.length === 0) {
+                      toast.info("Aucune donnée à exporter (page vide)")
+                      return
+                    }
+                    const header = [
+                      "id",
+                      "order_number",
+                      "customer_name",
+                      "customer_email",
+                      "status",
+                      "payment_status",
+                      "total_amount",
+                      "created_at",
+                    ]
+                    const csvRows = [
+                      header.join(","),
+                      ...orders.map((o) =>
+                        [
+                          o.id,
+                          JSON.stringify(o.order_number || ""),
+                          JSON.stringify(o.profiles?.full_name || ""),
+                          JSON.stringify(o.profiles?.email || ""),
+                          o.status || "",
+                          o.payment_status || "",
+                          (o.total_amount ?? "").toString(),
+                          o.created_at || "",
+                        ].join(","),
+                      ),
+                    ]
+                    const blob = new Blob([csvRows.join("\n")], { type: "text/csv;charset=utf-8" })
+                    const url = URL.createObjectURL(blob)
+                    const a = document.createElement("a")
+                    a.href = url
+                    a.download = `orders_page_${page}.csv`
+                    a.click()
+                    URL.revokeObjectURL(url)
+                  } catch {
+                    toast.error("Export CSV impossible")
+                  }
+                }}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export CSV (page)
+              </Button>
             </div>
           </div>
         </CardContent>
