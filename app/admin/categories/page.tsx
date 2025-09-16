@@ -36,7 +36,7 @@ export default function AdminCategoriesPage() {
     image_url: "",
   })
 
-  const supabase = createClient()
+  
 
   useEffect(() => {
     fetchCategories()
