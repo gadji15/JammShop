@@ -105,19 +105,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden">
-      <div className={`${sidebarOpen ? "block" : "hidden"} lg:block fixed lg:relative z-30 h-full`}>
-        <AdminSidebar />
+      {/* Sidebar */}
+      <div className="fixed lg:relative z-30 h-full">
+        <AdminSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       </div>
 
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 z-20 bg-black bg-opacity-50 lg:hidden transition-opacity duration-300"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-        <AdminHeader onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
+        <AdminHeader onMenuClick={() => setSidebarOpen((v) => !v)} />
         <main className="flex-1 overflow-auto p-4 lg:p-6 xl:p-8 bg-gray-50">
           <div className="max-w-full mx-auto">{children}</div>
         </main>

@@ -12,7 +12,24 @@ import {
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet"
 import { useCategories } from "@/lib/hooks/use-categories"
 import { createClient } from "@/lib/supabase/client"
-import { Heart, Menu, Search, ShoppingCart, User, Settings } from "lucide-react"
+import {
+  Heart,
+  Menu,
+  Search,
+  ShoppingCart,
+  User,
+  Settings,
+  ChevronDown,
+  Package,
+  FolderTree,
+  Compass,
+  MessageCircle,
+  Wand2,
+  Percent,
+  Building2,
+  Info,
+  ChevronRight,
+} from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
@@ -29,6 +46,8 @@ export function Header() {
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [hasShadow, setHasShadow] = useState(false)
   const [cartOpen, setCartOpen] = useState(false)
+  const [mobileCatsOpen, setMobileCatsOpen] = useState(true)
+  const [mobileDiscoverOpen, setMobileDiscoverOpen] = useState(true)
   const { categories } = useCategories()
   const router = useRouter()
   const supabase = createClient()
@@ -175,14 +194,16 @@ export function Header() {
 
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center space-x-6 flex-1">
-              <Link href="/products" className="text-gray-700 hover:text-blue-600 font-medium transition-colors">
+              <Link href="/products" className="text-gray-700 hover:text-blue-600 font-medium transition-colors inline-flex items-center gap-1.5">
+                <Package className="h-4 w-4 text-gray-400" />
                 Produits
               </Link>
 
               {/* Categories Dropdown */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="text-gray-700 hover:text-blue-600 font-medium">
+                  <Button variant="ghost" className="text-gray-700 hover:text-blue-600 font-medium inline-flex items-center gap-1.5">
+                    <FolderTree className="h-4 w-4 text-gray-400" />
                     Catégories
                   </Button>
                 </DropdownMenuTrigger>
@@ -206,7 +227,8 @@ export function Header() {
               {/* Discover Dropdown to avoid clutter */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="text-gray-700 hover:text-blue-600 font-medium">
+                  <Button variant="ghost" className="text-gray-700 hover:text-blue-600 font-medium inline-flex items-center gap-1.5">
+                    <Compass className="h-4 w-4 text-gray-400" />
                     Découvrir
                   </Button>
                 </DropdownMenuTrigger>
@@ -413,77 +435,111 @@ export function Header() {
                       <div className="space-y-2">
                         <Link
                           href="/products"
-                          className="block rounded-md px-3 py-2 text-base font-medium text-gray-900 hover:bg-gray-100"
+                          className="block rounded-md px-3 py-2 text-base font-medium text-gray-900 hover:bg-gray-100 inline-flex items-center gap-2"
                           onClick={() => setIsMenuOpen(false)}
                         >
+                          <Package className="h-4 w-4 text-gray-400" />
                           Produits
                         </Link>
                       </div>
 
-                      {/* Categories */}
+                      {/* Categories (collapsible) */}
                       <div className="space-y-2">
-                        <div className="px-3 py-2 text-xs uppercase tracking-wide text-gray-500">Catégories</div>
-                        <div className="pl-1 space-y-1 max-h-48 overflow-y-auto">
-                          {categories.map((category) => (
+                        <button
+                          type="button"
+                          className="w-full flex items-center justify-between px-3 py-2 text-xs uppercase tracking-wide text-gray-500 hover:text-gray-900"
+                          onClick={() => setMobileCatsOpen((v) => !v)}
+                          aria-expanded={mobileCatsOpen}
+                        >
+                          <span>Catégories</span>
+                          <ChevronDown
+                            className={`h-4 w-4 transition-transform ${mobileCatsOpen ? "rotate-0" : "-rotate-90"}`}
+                          />
+                        </button>
+                        {mobileCatsOpen && (
+                          <>
+                            <div className="pl-1 space-y-1 max-h-48 overflow-y-auto">
+                              {categories.map((category) => (
+                                <Link
+                                  key={category.id}
+                                  href={`/categories/${category.slug}`}
+                                  className="block rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                  onClick={() => setIsMenuOpen(false)}
+                                >
+                                  {category.name}
+                                </Link>
+                              ))}
+                            </div>
                             <Link
-                              key={category.id}
-                              href={`/categories/${category.slug}`}
-                              className="block rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                              href="/products"
+                              className="block rounded-md px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50"
                               onClick={() => setIsMenuOpen(false)}
                             >
-                              {category.name}
+                              Voir toutes les catégories
                             </Link>
-                          ))}
-                        </div>
-                        <Link
-                          href="/products"
-                          className="block rounded-md px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50"
-                          onClick={() => setIsMenuOpen(false)}
-                        >
-                          Voir toutes les catégories
-                        </Link>
+                          </>
+                        )}
                       </div>
 
-                      {/* Discover */}
-                      <div className="space-y-1">
-                        <div className="px-3 py-2 text-xs uppercase tracking-wide text-gray-500">Découvrir</div>
-                        <Link
-                          href="/new-arrivals"
-                          className="block rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                          onClick={() => setIsMenuOpen(false)}
+                      {/* Discover (collapsible) */}
+                      <div className="space-y-2">
+                        <button
+                          type="button"
+                          className="w-full flex items-center justify-between px-3 py-2 text-xs uppercase tracking-wide text-gray-500 hover:text-gray-900"
+                          onClick={() => setMobileDiscoverOpen((v) => !v)}
+                          aria-expanded={mobileDiscoverOpen}
                         >
-                          Nouveautés
-                        </Link>
-                        <Link
-                          href="/deals"
-                          className="block rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                          onClick={() => setIsMenuOpen(false)}
-                        >
-                          Offres
-                        </Link>
-                        <Link
-                          href="/brands"
-                          className="block rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                          onClick={() => setIsMenuOpen(false)}
-                        >
-                          Marques
-                        </Link>
+                          <span>Découvrir</span>
+                          <ChevronDown
+                            className={`h-4 w-4 transition-transform ${mobileDiscoverOpen ? "rotate-0" : "-rotate-90"}`}
+                          />
+                        </button>
+                        {mobileDiscoverOpen && (
+                          <div className="space-y-1">
+                            <Link
+                              href="/new-arrivals"
+                              className="block rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 inline-flex items-center gap-2"
+                              onClick={() => setIsMenuOpen(false)}
+                            >
+                              <Wand2 className="h-4 w-4 text-gray-400" />
+                              Nouveautés
+                            </Link>
+                            <Link
+                              href="/deals"
+                              className="block rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 inline-flex items-center gap-2"
+                              onClick={() => setIsMenuOpen(false)}
+                            >
+                              <Percent className="h-4 w-4 text-gray-400" />
+                              Offres
+                            </Link>
+                            <Link
+                              href="/brands"
+                              className="block rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 inline-flex items-center gap-2"
+                              onClick={() => setIsMenuOpen(false)}
+                            >
+                              <Building2 className="h-4 w-4 text-gray-400" />
+                              Marques
+                            </Link>
+                          </div>
+                        )}
                       </div>
 
                       {/* Secondary */}
                       <div className="space-y-1 pt-2">
                         <Link
                           href="/contact"
-                          className="block rounded-md px-3 py-2 text-base font-medium text-gray-900 hover:bg-gray-100"
+                          className="block rounded-md px-3 py-2 text-base font-medium text-gray-900 hover:bg-gray-100 inline-flex items-center gap-2"
                           onClick={() => setIsMenuOpen(false)}
                         >
+                          <MessageCircle className="h-4 w-4 text-gray-400" />
                           Contact
                         </Link>
                         <Link
                           href="/about"
-                          className="block rounded-md px-3 py-2 text-base font-medium text-gray-900 hover:bg-gray-100"
+                          className="block rounded-md px-3 py-2 text-base font-medium text-gray-900 hover:bg-gray-100 inline-flex items-center gap-2"
                           onClick={() => setIsMenuOpen(false)}
                         >
+                          <Info className="h-4 w-4 text-gray-400" />
                           À propos
                         </Link>
                       </div>
