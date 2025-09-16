@@ -242,12 +242,21 @@ export default function AdminOrdersPage() {
                         <Select
                           value={order.status}
                           onValueChange={async (value) => {
-                            await fetch(`/api/admin/orders/${order.id}`, {
-                              method: "PATCH",
-                              headers: { "Content-Type": "application/json" },
-                              body: JSON.stringify({ status: value }),
-                            })
-                            fetchOrders()
+                            try {
+                              const res = await fetch(`/api/admin/orders/${order.id}`, {
+                                method: "PATCH",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ status: value }),
+                              })
+                              if (!res.ok) {
+                                const j = await res.json().catch(() => ({}))
+                                throw new Error(j?.error || "Mise à jour impossible")
+                              }
+                              toast.success("Statut mis à jour")
+                              fetchOrders()
+                            } catch (e) {
+                              toast.error("Erreur lors de la mise à jour du statut")
+                            }
                           }}
                         >
                           <SelectTrigger className="w-32">
