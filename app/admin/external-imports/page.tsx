@@ -23,10 +23,124 @@ interface ExternalProduct {
   stock_quantity?: number
 }
 
+/* Compact Jobs history component */
 function JobsHistory() {
   const [jobs, setJobs] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const  const [searchQuery, setSearchQuery] = useState("")
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
+  const [total, setTotal] = useState(0)
+
+  const fetchJobs = async () => {
+    setLoading(true)
+    try {
+      const p = new URLSearchParams()
+      p.set("page", String(page))
+      p.set("pageSize", String(pageSize))
+      const res = await fetch(`/api/admin/external-imports/jobs?${p.toString()}`, { cache: "no-store" })
+      const j = await res.json()
+      if (res.ok) {
+        setJobs(j.data || [])
+        setTotal(j.total || 0)
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchJobs()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, pageSize])
+
+  const totalPages = Math.max(1, Math.ceil(total / pageSize))
+
+  return (
+    <div className="space-y-3">
+      {loading ? (
+        <div className="text-sm text-gray-500">Chargement...</div>
+      ) : jobs.length === 0 ? (
+        <div className="text-sm text-gray-500">Aucun import enregistré</div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-gray-500">
+                <th className="py-2">Date</th>
+                <th className="py-2">Fournisseur</th>
+                <th className="py-2">Statut</th>
+                <th className="py-2">Succès</th>
+                <th className="py-2">Échecs</th>
+              </tr>
+            </thead>
+            <tbody>
+              {jobs.map((job) => (
+                <tr key={job.id} className="border-t">
+                  <td className="py-2">{new Date(job.created_at).toLocaleString()}</td>
+                  <td className="py-2">{job.supplier || "-"}</td>
+                  <td className="py-2">
+                    <span
+                      className={
+                        job.status === "success"
+                          ? "text-green-600"
+                          : job.status === "failed"
+                          ? "text-red-600"
+                          : job.status === "partial"
+                          ? "text-orange-600"
+                          : "text-gray-600"
+                      }
+                    >
+                      {job.status}
+                    </span>
+                  </td>
+                  <td className="py-2">{job.success_count}</td>
+                  <td className="py-2">{job.failed_count}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          <div className="mt-3 flex items-center justify-between">
+            <div className="text-xs text-gray-500">
+              Page {page} / {totalPages} — {total} élément(s)
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>
+                Précédent
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={page >= totalPages}
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              >
+                Suivant
+              </Button>
+              <select
+                value={pageSize}
+                onChange={(e) => {
+                  setPageSize(Number(e.target.value))
+                  setPage(1)
+                }}
+                className="border rounded px-2 py-1 text-xs bg-transparent"
+                aria-label="Lignes par page"
+              >
+                {[10, 20, 30, 50].map((s) => (
+                  <option key={s} value={s}>
+                    {s} / page
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+export default function ExternalImportsPage() {
+  const [searchQuery, setSearchQuery] = useState("")
   const [searchResults, setSearchResults] = useState<ExternalProduct[]>([])
   const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set())
   const [searching, setSearching] = useState(false)
@@ -37,15 +151,8 @@ function JobsHistory() {
   const [roundTo, setRoundTo] = useState(50)
   const [psychological, setPsychological] = useState(true)
 
-  const {
-    importing,
-    syncing,
-    fetchAlibabaProducts,
-    fetchJumiaProducts,
-    importByUrl,
-    importBatch,
-    syncExternalProducts,
-  } = useExternalSuppliers()
+  const { importing, syncing, fetchAlibabaProducts, fetchJumiaProducts, importByUrl, importBatch, syncExternalProducts } =
+    useExternalSuppliers()
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) {
