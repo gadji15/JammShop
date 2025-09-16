@@ -40,46 +40,36 @@ export default function AdminDealsPage() {
 
   useEffect(() => {
     fetchRows()
-  }, [])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query, minDiscount])
 
   const fetchRows = async () => {
     setLoading(true)
     try {
-      const { data, error } = await supabase
-        .from("products")
-        .select(
-          `
-            *,
-            categories (*)
-          `,
-        )
-        .eq("is_active", true)
-        .order("created_at", { ascending: false })
-
-      if (error) throw error
-
+      const p = new URLSearchParams()
+      if (query) p.set("q", query)
+      if (minDiscount) p.set("minDiscount", String(minDiscount))
+      const res = await fetch(`/api/admin/deals?${p.toString()}`, { cache: "no-store" })
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}))
+        throw new Error(j?.error || "Chargement impossible")
+      }
+      const json = await res.json()
       const mapped: WithDiscount[] =
-        (data || []).map((p: any) => {
-          const price = Number(p.price || 0)
-          const compare = p.compare_price != null ? Number(p.compare_price) : null
-          const discount =
-            compare != null && compare > 0 && price < compare ? Math.round(((compare - price) / compare) * 100) : 0
-          return {
-            id: p.id,
-            name: p.name,
-            slug: p.slug,
-            price,
-            compare_price: compare,
-            stock_quantity: Number(p.stock_quantity || 0),
-            low_stock_threshold: Number(p.low_stock_threshold || 0),
-            images: Array.isArray(p.images) ? p.images : [],
-            created_at: p.created_at,
-            categories: p.categories ? { id: p.categories.id, name: p.categories.name, slug: p.categories.slug } : null,
-            is_active: !!p.is_active,
-            discount,
-          }
-        }) || []
-
+        (json.data || []).map((p: any) => ({
+          id: p.id,
+          name: p.name,
+          slug: p.slug,
+          price: Number(p.price || 0),
+          compare_price: p.compare_price != null ? Number(p.compare_price) : null,
+          stock_quantity: Number(p.stock_quantity || 0),
+          low_stock_threshold: Number(p.low_stock_threshold || 0),
+          images: Array.isArray(p.images) ? p.images : [],
+          created_at: p.created_at,
+          categories: p.categories ? { id: p.categories.id, name: p.categories.name, slug: p.categories.slug } : null,
+          is_active: !!p.is_active,
+          discount: Number(p.discount || 0),
+        })) || []
       setRows(mapped)
     } catch (e) {
       console.error(e)
