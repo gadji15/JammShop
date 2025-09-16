@@ -32,21 +32,12 @@ export async function GET(req: Request) {
   const sort = url.searchParams.get("sort") || "created_at"
   const order = (url.searchParams.get("order") || "desc").toLowerCase() === "asc" ? "asc" : "desc"
 
-  let query = supabase
-    .from("orders")
-    .select(
-      `
-      *,
-      profiles:profiles!orders_user_id_fkey (full_name, email)
-    `,
-      { count: "exact" },
-    )
+  // Base select without relational embedding (FK is to auth.users, not profiles)
+  let query = supabase.from("orders").select("*", { count: "exact" })
 
+  // Basic search on order_number at DB level (profile search handled after enrichment)
   if (q) {
-    // filter by order_number or profile name/email
-    query = query.or(
-      `order_number.ilike.%${q}%,profiles.full_name.ilike.%${q}%,profiles.email.ilike.%${q}%`,
-    )
+    query = query.ilike("order_number", `%${q}%`)
   }
   if (status && status !== "all") {
     query = query.eq("status", status)
@@ -67,12 +58,34 @@ export async function GET(req: Request) {
 
   const from = (page - 1) * pageSize
   const to = from + pageSize - 1
-  const { data, error, count } = await query.range(from, to)
+  const { data: orders, error, count } = await query.range(from, to)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
+  const rows = orders || []
+
+  // Enrich with profiles (full_name, email)
+  let enriched = rows
+  if (rows.length > 0) {
+    const userIds = Array.from(new Set(rows.map((r: any) => r.user_id).filter(Boolean)))
+    if (userIds.length > 0) {
+      const { data: profiles, error: pErr } = await supabase
+        .from("profiles")
+        .select("id, full_name, email")
+        .in("id", userIds)
+
+      if (!pErr && profiles) {
+        const byId = new Map(profiles.map((p: any) => [p.id, { full_name: p.full_name, email: p.email }]))
+        enriched = rows.map((r: any) => ({
+          ...r,
+          profiles: byId.get(r.user_id) || null,
+        }))
+      }
+    }
+  }
+
   return NextResponse.json({
-    data: data || [],
+    data: enriched,
     page,
     pageSize,
     total: count || 0,
