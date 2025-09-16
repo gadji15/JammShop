@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Eye, Search, Download, Filter, MoreHorizontal } from "lucide-react"
+import { Eye, Search, Download, Filter, MoreHorizontal, ChevronLeft, ChevronRight } from "lucide-react"
 import Link from "next/link"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
@@ -481,39 +481,56 @@ export default function AdminOrdersPage() {
           </div>
 
           {/* Pagination */}
-          <div className="flex items-center justify-between mt-4">
-            <div className="text-sm text-gray-600">
-              Page {page} / {totalPages} — {total} élément(s)
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                disabled={page <= 1}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-              >
-                Précédent
-              </Button>
-              <Button
-                variant="outline"
-                disabled={page >= totalPages}
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              >
-                Suivant
-              </Button>
-              <select
-                value={pageSize}
-                onChange={(e) => {
-                  setPageSize(Number(e.target.value))
-                  setPage(1)
-                }}
-                className="border rounded px-2 py-1 text-sm"
-              >
-                {[10, 20, 30, 50, 100].map((s) => (
-                  <option key={s} value={s}>
-                    {s} / page
-                  </option>
-                ))}
-              </select>
+          <div className="mt-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <div className="text-sm text-gray-600 order-2 sm:order-1 text-center sm:text-left">
+                Page {page} / {totalPages} — {total} élément(s)
+              </div>
+
+              <div className="order-1 sm:order-2 flex items-center justify-between gap-2">
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    disabled={page <= 1}
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    aria-label="Précédent"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <span className="min-w-[72px] text-center text-sm">
+                    {page} / {totalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    disabled={page >= totalPages}
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    aria-label="Suivant"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="hidden sm:inline text-sm text-gray-600">Lignes</span>
+                  <select
+                    value={pageSize}
+                    onChange={(e) => {
+                      setPageSize(Number(e.target.value))
+                      setPage(1)
+                    }}
+                    className="border rounded px-2 py-1 text-sm bg-transparent"
+                    aria-label="Lignes par page"
+                  >
+                    {[10, 20, 30, 50, 100].map((s) => (
+                      <option key={s} value={s}>
+                        {s} / page
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
             </div>
           </div>
         </CardContent>
