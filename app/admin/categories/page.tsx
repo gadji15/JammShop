@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 
@@ -109,9 +109,9 @@ export default function AdminCategoriesPage() {
   const handleEdit = (category: Category) => {
     setEditingCategory(category)
     setFormData({
-      name: category.name,
-      description: category.description,
-      image_url: category.image_url,
+      name: category.name || "",
+      description: category.description || "",
+      image_url: category.image_url || "",
     })
     setIsDialogOpen(true)
   }
@@ -167,6 +167,7 @@ export default function AdminCategoriesPage() {
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle>{editingCategory ? "Modifier la catégorie" : "Nouvelle catégorie"}</DialogTitle>
+              <DialogDescription>Renseignez les informations de la catégorie puis validez.</DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
