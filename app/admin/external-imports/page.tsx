@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useExternalSuppliers } from "@/lib/hooks/use-external-suppliers"
-import { Search, Download, RefreshCw, Package, AlertCircle, CheckCircle } from "lucide-react"
+import { Search, Download, RefreshCw, Package, AlertCircle, CheckCircle, Link2, Percent } from "lucide-react"
 import { toast } from "sonner"
 
 interface ExternalProduct {
@@ -29,9 +29,21 @@ export default function ExternalImportsPage() {
   const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set())
   const [searching, setSearching] = useState(false)
   const [activeSupplier, setActiveSupplier] = useState<"alibaba" | "jumia">("alibaba")
+  const [importUrl, setImportUrl] = useState("")
+  const [marginPercent, setMarginPercent] = useState(25)
+  const [marginFixed, setMarginFixed] = useState(0)
+  const [roundTo, setRoundTo] = useState(50)
+  const [psychological, setPsychological] = useState(true)
 
-  const { importing, syncing, fetchAlibabaProducts, fetchJumiaProducts, importProducts, syncExternalProducts } =
-    useExternalSuppliers()
+  const {
+    importing,
+    syncing,
+    fetchAlibabaProducts,
+    fetchJumiaProducts,
+    importProducts,
+    importByUrl,
+    syncExternalProducts,
+  } = useExternalSuppliers()
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) {
@@ -117,39 +129,123 @@ export default function ExternalImportsPage() {
             Rechercher des Produits
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <Tabs value={activeSupplier} onValueChange={(value) => setActiveSupplier(value as "alibaba" | "jumia")}>
-            <TabsList>
-              <TabsTrigger value="alibaba">Alibaba</TabsTrigger>
-              <TabsTrigger value="jumia">Jumia</TabsTrigger>
-            </TabsList>
-          </Tabs>
-
-          <div className="flex space-x-4">
-            <div className="flex-1">
-              <Label htmlFor="search">Terme de recherche</Label>
-              <Input
-                id="search"
-                placeholder="Ex: smartphones, vêtements, électronique..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyPress={(e) => e.key === "Enter" && handleSearch()}
-              />
+        <CardContent className="space-y-6">
+          {/* Import direct par URL avec marge automatique */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <Link2 className="h-4 w-4" />
+              Import direct par URL (AliExpress, Alibaba, Jumia…)
             </div>
-            <div className="flex items-end">
-              <Button onClick={handleSearch} disabled={searching}>
-                {searching ? (
-                  <>
-                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                    Recherche...
-                  </>
-                ) : (
-                  <>
-                    <Search className="h-4 w-4 mr-2" />
-                    Rechercher
-                  </>
-                )}
-              </Button>
+            <div className="flex flex-col md:flex-row gap-3">
+              <Input
+                placeholder="Collez l’URL du produit fournisseur"
+                value={importUrl}
+                onChange={(e) => setImportUrl(e.target.value)}
+              />
+              <div className="flex items-center gap-2">
+                <Button
+                  onClick={async () => {
+                    if (!importUrl.trim()) return
+                    await importByUrl(importUrl, {
+                      strategy: marginFixed > 0 ? "hybrid" : "percent",
+                      percent: marginPercent,
+                      fixed: marginFixed,
+                      minMargin: 0,
+                      roundTo,
+                      psychological,
+                    })
+                    setImportUrl("")
+                  }}
+                  disabled={importing}
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Importer depuis URL
+                </Button>
+              </div>
+            </div>
+
+            {/* Règles de marge rapides */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+              <div>
+                <Label htmlFor="marginPercent" className="flex items-center gap-2">
+                  <Percent className="h-4 w-4" />
+                  Marge %
+                </Label>
+                <Input
+                  id="marginPercent"
+                  type="number"
+                  min={0}
+                  max={300}
+                  value={marginPercent}
+                  onChange={(e) => setMarginPercent(Number(e.target.value))}
+                />
+              </div>
+              <div>
+                <Label htmlFor="marginFixed">Marge fixe (FCFA)</Label>
+                <Input
+                  id="marginFixed"
+                  type="number"
+                  min={0}
+                  step={50}
+                  value={marginFixed}
+                  onChange={(e) => setMarginFixed(Number(e.target.value))}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label htmlFor="roundTo">Arrondir au multiple</Label>
+                  <Input
+                    id="roundTo"
+                    type="number"
+                    min={0}
+                    step={10}
+                    value={roundTo}
+                    onChange={(e) => setRoundTo(Number(e.target.value))}
+                  />
+                </div>
+                <label className="flex items-center gap-2 text-sm mt-6">
+                  <Checkbox checked={psychological} onCheckedChange={(v) => setPsychological(!!v)} />
+                  Prix psychologique
+                </label>
+              </div>
+            </div>
+          </div>
+
+          {/* Recherche par fournisseur */}
+          <div className="space-y-4">
+            <Tabs value={activeSupplier} onValueChange={(value) => setActiveSupplier(value as "alibaba" | "jumia")}>
+              <TabsList>
+                <TabsTrigger value="alibaba">Alibaba</TabsTrigger>
+                <TabsTrigger value="jumia">Jumia</TabsTrigger>
+              </TabsList>
+            </Tabs>
+
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="flex-1">
+                <Label htmlFor="search">Terme de recherche</Label>
+                <Input
+                  id="search"
+                  placeholder="Ex: smartphones, vêtements, électronique..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                />
+              </div>
+              <div className="flex items-end">
+                <Button onClick={handleSearch} disabled={searching}>
+                  {searching ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      Recherche...
+                    </>
+                  ) : (
+                    <>
+                      <Search className="h-4 w-4 mr-2" />
+                      Rechercher
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
           </div>
         </CardContent>
