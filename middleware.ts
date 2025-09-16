@@ -5,7 +5,6 @@ import { createServerClient } from "@supabase/ssr"
 // Central configuration for restricted admin sections
 const SUPER_ADMIN_ONLY_PREFIXES = [
   "/admin/settings",
-  "/admin/users",
   "/admin/analytics",
   "/admin/external-imports",
 ]
