@@ -40,8 +40,8 @@ export default function ExternalImportsPage() {
     syncing,
     fetchAlibabaProducts,
     fetchJumiaProducts,
-    importProducts,
     importByUrl,
+    importBatch,
     syncExternalProducts,
   } = useExternalSuppliers()
 
@@ -98,21 +98,17 @@ export default function ExternalImportsPage() {
     }
 
     const productsToImport = searchResults.filter((p) => p && selectedProducts.has(p.external_id))
+    const supplierLabel = activeSupplier === "alibaba" ? "Alibaba" : "Jumia"
 
     try {
-      const result = await importProducts(
-        activeSupplier,
-        searchQuery,
-        productsToImport,
-        {
-          strategy: marginFixed > 0 ? "hybrid" : "percent",
-          percent: marginPercent,
-          fixed: marginFixed,
-          minMargin: 0,
-          roundTo,
-          psychological,
-        }
-      )
+      const result = await importBatch(supplierLabel, productsToImport, {
+        strategy: marginFixed > 0 ? "hybrid" : "percent",
+        percent: marginPercent,
+        fixed: marginFixed,
+        minMargin: 0,
+        roundTo,
+        psychological,
+      })
 
       if (result.success > 0) {
         setSelectedProducts(new Set())
