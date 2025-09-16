@@ -6,10 +6,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Eye, Search, Download } from "lucide-react"
+import { Eye, Search, Download, Filter, MoreHorizontal } from "lucide-react"
 import Link from "next/link"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 interface Order {
   id: string
@@ -35,10 +43,22 @@ export default function AdminOrdersPage() {
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
   const [q, setQ] = useState("")
+  const [debouncedQ, setDebouncedQ] = useState("")
   const [status, setStatus] = useState("all")
+  const [payment, setPayment] = useState("all")
+  const [start, setStart] = useState<string>("")
+  const [end, setEnd] = useState<string>("")
   const [sort, setSort] = useState("created_at")
   const [order, setOrder] = useState<OrderDir>("desc")
   const [total, setTotal] = useState(0)
+
+  const [filtersOpen, setFiltersOpen] = useState(false)
+
+  // debounce search
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQ(q), 300)
+    return () => clearTimeout(t)
+  }, [q])
 
   const totalPages = useMemo(() => Math.max(1, Math.ceil(total / pageSize)), [total, pageSize])
 
@@ -49,8 +69,11 @@ export default function AdminOrdersPage() {
       const p = new URLSearchParams()
       p.set("page", String(page))
       p.set("pageSize", String(pageSize))
-      if (q) p.set("q", q)
+      if (debouncedQ) p.set("q", debouncedQ)
       if (status && status !== "all") p.set("status", status)
+      if (payment && payment !== "all") p.set("payment", payment)
+      if (start) p.set("start", start)
+      if (end) p.set("end", end)
       if (sort) p.set("sort", sort)
       if (order) p.set("order", order)
       const res = await fetch(`/api/admin/orders?${p.toString()}`, { cache: "no-store" })
@@ -68,11 +91,22 @@ export default function AdminOrdersPage() {
     } finally {
       setLoading(false)
     }
-  }, [page, pageSize, q, status, sort, order])
+  }, [page, pageSize, debouncedQ, status, payment, start, end, sort, order])
 
   useEffect(() => {
     fetchOrders()
   }, [fetchOrders])
+
+  const resetFilters = () => {
+    setQ("")
+    setStatus("all")
+    setPayment("all")
+    setStart("")
+    setEnd("")
+    setSort("created_at")
+    setOrder("desc")
+    setPage(1)
+  }
 
   const toggleSort = (key: string) => {
     if (sort === key) {
@@ -110,68 +144,223 @@ export default function AdminOrdersPage() {
         return "bg-yellow-100 text-yellow-800"
       case "failed":
         return "bg-red-100 text-red-800"
+      case "refunded":
+        return "bg-blue-100 text-blue-800"
       default:
         return "bg-gray-100 text-gray-800"
     }
   }
 
+  const exportCsvPage = () => {
+    try {
+      if (!orders || orders.length === 0) {
+        toast.info("Aucune donnée à exporter (page vide)")
+        return
+      }
+      const header = [
+        "id",
+        "order_number",
+        "customer_name",
+        "customer_email",
+        "status",
+        "payment_status",
+        "total_amount",
+        "created_at",
+      ]
+      const csvRows = [
+        header.join(","),
+        ...orders.map((o) =>
+          [
+            o.id,
+            JSON.stringify(o.order_number || ""),
+            JSON.stringify(o.profiles?.full_name || ""),
+            JSON.stringify(o.profiles?.email || ""),
+            o.status || "",
+            o.payment_status || "",
+            (o.total_amount ?? "").toString(),
+            o.created_at || "",
+          ].join(","),
+        ),
+      ]
+      const blob = new Blob([csvRows.join("\n")], { type: "text/csv;charset=utf-8" })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `orders_page_${page}.csv`
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch {
+      toast.error("Export CSV impossible")
+    }
+  }
+
+  const hasActiveFilters = status !== "all" || payment !== "all" || !!start || !!end || !!debouncedQ
+
   return (
     <div className="space-y-6">
-      <div>
+      <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-bold text-gray-900">Commandes</h1>
         <p className="text-gray-600">Gérez toutes les commandes de votre boutique</p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Liste des commandes {total ? `(${total})` : ""}</CardTitle>
-          <div className="flex items-center gap-2 flex-wrap">
-            <div className="relative flex-1 min-w-[200px] md:max-w-sm">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Rechercher (numéro, client, email)"
-                value={q}
-                onChange={(e) => {
-                  setQ(e.target.value)
-                  setPage(1)
-                }}
-                className="pl-8"
-              />
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="relative flex-1 min-w-[220px] md:max-w-sm">
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Rechercher (numéro, client, email)"
+                  value={q}
+                  onChange={(e) => {
+                    setQ(e.target.value)
+                    setPage(1)
+                  }}
+                  className="pl-8"
+                />
+              </div>
+
+              <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="outline" className="gap-2">
+                    <Filter className="h-4 w-4" />
+                    Filtres
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="w-full sm:max-w-md">
+                  <SheetHeader>
+                    <SheetTitle>Filtres avancés</SheetTitle>
+                  </SheetHeader>
+                  <div className="mt-4 space-y-4">
+                    <div className="space-y-2">
+                      <span className="text-sm font-medium">Statut</span>
+                      <Select
+                        value={status}
+                        onValueChange={(v) => {
+                          setStatus(v)
+                          setPage(1)
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Statut" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Tous</SelectItem>
+                          <SelectItem value="pending">En attente</SelectItem>
+                          <SelectItem value="confirmed">Confirmée</SelectItem>
+                          <SelectItem value="processing">En traitement</SelectItem>
+                          <SelectItem value="shipped">Expédiée</SelectItem>
+                          <SelectItem value="delivered">Livrée</SelectItem>
+                          <SelectItem value="cancelled">Annulée</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <span className="text-sm font-medium">Paiement</span>
+                      <Select
+                        value={payment}
+                        onValueChange={(v) => {
+                          setPayment(v)
+                          setPage(1)
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Paiement" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Tous</SelectItem>
+                          <SelectItem value="pending">En attente</SelectItem>
+                          <SelectItem value="paid">Payé</SelectItem>
+                          <SelectItem value="failed">Échoué</SelectItem>
+                          <SelectItem value="refunded">Remboursé</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <span className="text-sm font-medium">Période</span>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <Input
+                          type="date"
+                          value={start || ""}
+                          onChange={(e) => {
+                            setStart(e.target.value || "")
+                            setPage(1)
+                          }}
+                        />
+                        <Input
+                          type="date"
+                          value={end || ""}
+                          onChange={(e) => {
+                            setEnd(e.target.value || "")
+                            setPage(1)
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2 pt-2">
+                      <Button
+                        className="flex-1"
+                        onClick={() => {
+                          setFiltersOpen(false)
+                          setPage(1)
+                          fetchOrders()
+                        }}
+                      >
+                        Appliquer
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          resetFilters()
+                          setFiltersOpen(false)
+                        }}
+                      >
+                        Réinitialiser
+                      </Button>
+                    </div>
+                  </div>
+                </SheetContent>
+              </Sheet>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="gap-2">
+                    <MoreHorizontal className="h-4 w-4" />
+                    Actions
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={exportCsvPage}>
+                    <Download className="h-4 w-4 mr-2" />
+                    Export CSV (page)
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => {
+                      resetFilters()
+                    }}
+                  >
+                    Réinitialiser
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
-            <Select
-              value={status}
-              onValueChange={(v) => {
-                setStatus(v)
-                setPage(1)
-              }}
-            >
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="Filtrer par statut" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tous les statuts</SelectItem>
-                <SelectItem value="pending">En attente</SelectItem>
-                <SelectItem value="confirmed">Confirmée</SelectItem>
-                <SelectItem value="processing">En traitement</SelectItem>
-                <SelectItem value="shipped">Expédiée</SelectItem>
-                <SelectItem value="delivered">Livrée</SelectItem>
-                <SelectItem value="cancelled">Annulée</SelectItem>
-              </SelectContent>
-            </Select>
-            <div className="ml-auto flex items-center gap-2">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setQ("")
-                  setStatus("all")
-                  setSort("created_at")
-                  setOrder("desc")
-                  setPage(1)
-                }}
-              >
-                Réinitialiser
-              </Button>
-            </div>
+
+            {hasActiveFilters && (
+              <div className="flex flex-wrap gap-2 text-xs text-gray-600">
+                {debouncedQ && <span className="px-2 py-1 bg-gray-100 rounded">Recherche: “{debouncedQ}”</span>}
+                {status !== "all" && <span className="px-2 py-1 bg-gray-100 rounded">Statut: {status}</span>}
+                {payment !== "all" && <span className="px-2 py-1 bg-gray-100 rounded">Paiement: {payment}</span>}
+                {(start || end) && (
+                  <span className="px-2 py-1 bg-gray-100 rounded">
+                    Période: {start || "…"} → {end || "…"}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         </CardHeader>
         <CardContent>
@@ -189,22 +378,22 @@ export default function AdminOrdersPage() {
                   </TableHead>
                   <TableHead>Client</TableHead>
                   <TableHead
-                    className="cursor-pointer"
+                    className="cursor-pointer hidden md:table-cell"
                     onClick={() => toggleSort("created_at")}
                     title="Trier par date"
                   >
                     Date {sort === "created_at" ? (order === "asc" ? "▲" : "▼") : ""}
                   </TableHead>
                   <TableHead
-                    className="cursor-pointer"
+                    className="cursor-pointer hidden lg:table-cell"
                     onClick={() => toggleSort("total_amount")}
                     title="Trier par montant"
                   >
                     Montant {sort === "total_amount" ? (order === "asc" ? "▲" : "▼") : ""}
                   </TableHead>
-                  <TableHead>Statut</TableHead>
-                  <TableHead>Paiement</TableHead>
-                  <TableHead>Actions</TableHead>
+                  <TableHead className="hidden sm:table-cell">Statut</TableHead>
+                  <TableHead className="hidden md:table-cell">Paiement</TableHead>
+                  <TableHead className="w-12 text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -234,11 +423,13 @@ export default function AdminOrdersPage() {
                           <p className="text-sm text-gray-500">{order.profiles?.email}</p>
                         </div>
                       </TableCell>
-                      <TableCell>{new Date(order.created_at).toLocaleDateString("fr-FR")}</TableCell>
-                      <TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        {new Date(order.created_at).toLocaleDateString("fr-FR")}
+                      </TableCell>
+                      <TableCell className="hidden lg:table-cell">
                         <span className="font-semibold">{order.total_amount.toFixed(2)} €</span>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="hidden sm:table-cell">
                         <Select
                           value={order.status}
                           onValueChange={async (value) => {
@@ -272,11 +463,11 @@ export default function AdminOrdersPage() {
                           </SelectContent>
                         </Select>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="hidden md:table-cell">
                         <Badge className={getPaymentStatusColor(order.payment_status)}>{order.payment_status}</Badge>
                       </TableCell>
-                      <TableCell>
-                        <Button variant="ghost" size="icon" asChild>
+                      <TableCell className="text-right">
+                        <Button variant="ghost" size="icon" asChild aria-label="Voir">
                           <Link href={`/admin/orders/${order.id}`}>
                             <Eye className="h-4 w-4" />
                           </Link>
@@ -323,54 +514,6 @@ export default function AdminOrdersPage() {
                   </option>
                 ))}
               </select>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  try {
-                    if (!orders || orders.length === 0) {
-                      toast.info("Aucune donnée à exporter (page vide)")
-                      return
-                    }
-                    const header = [
-                      "id",
-                      "order_number",
-                      "customer_name",
-                      "customer_email",
-                      "status",
-                      "payment_status",
-                      "total_amount",
-                      "created_at",
-                    ]
-                    const csvRows = [
-                      header.join(","),
-                      ...orders.map((o) =>
-                        [
-                          o.id,
-                          JSON.stringify(o.order_number || ""),
-                          JSON.stringify(o.profiles?.full_name || ""),
-                          JSON.stringify(o.profiles?.email || ""),
-                          o.status || "",
-                          o.payment_status || "",
-                          (o.total_amount ?? "").toString(),
-                          o.created_at || "",
-                        ].join(","),
-                      ),
-                    ]
-                    const blob = new Blob([csvRows.join("\n")], { type: "text/csv;charset=utf-8" })
-                    const url = URL.createObjectURL(blob)
-                    const a = document.createElement("a")
-                    a.href = url
-                    a.download = `orders_page_${page}.csv`
-                    a.click()
-                    URL.revokeObjectURL(url)
-                  } catch {
-                    toast.error("Export CSV impossible")
-                  }
-                }}
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Export CSV (page)
-              </Button>
             </div>
           </div>
         </CardContent>
