@@ -44,22 +44,14 @@ export default function AdminCategoriesPage() {
 
   const fetchCategories = async () => {
     try {
-      const { data, error } = await supabase
-        .from("categories")
-        .select(`
-          *,
-          products(count)
-        `)
-        .order("created_at", { ascending: false })
-
-      if (error) throw error
-
-      const categoriesWithCount = data.map((category) => ({
-        ...category,
-        product_count: category.products?.[0]?.count || 0,
-      }))
-
-      setCategories(categoriesWithCount)
+      setLoading(true)
+      const res = await fetch("/api/admin/categories", { cache: "no-store" })
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}))
+        throw new Error(j?.error || "Chargement impossible")
+      }
+      const json = await res.json()
+      setCategories(json.data || [])
     } catch (error) {
       console.error("Error fetching categories:", error)
       toast.error("Erreur lors du chargement des catégories")
